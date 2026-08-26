@@ -1,0 +1,19 @@
+{
+  "expected": {
+    "parts": 9,
+    "textures": 1,
+    "clipGroups": 2,
+    "maskSourceDraws": 2,
+    "mainDraws": 9,
+    "physicsChains": 1,
+    "morphInfluences": 4
+  },
+  "purpose": [
+    "premultiplied texture sampling",
+    "eye-white to iris inside clipping",
+    "stable draw order",
+    "pseudo3d head XYZ",
+    "physics-driven front hair morph"
+  ],
+  "sha256": "edcd96f37684d2ab4e2b79a96b4313bf16b59d50fc6624aa2f291a83658d4de2"
+}
