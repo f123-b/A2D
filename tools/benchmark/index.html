@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>A2D R7 Benchmark</title>
+  <style>
+    html,body{margin:0;height:100%;background:#0d0f12;color:#e8eaed;font-family:Inter,system-ui,sans-serif}
+    #app{height:100%;display:grid;grid-template-columns:minmax(0,1fr) 360px}
+    #stage{width:100%;height:100%;background:#11151a}
+    aside{padding:18px;overflow:auto;border-left:1px solid #2a2f36;background:#15181d}
+    button,select{width:100%;padding:9px;margin:6px 0;background:#22272e;color:#eee;border:1px solid #3a414a;border-radius:7px}
+    button:disabled{opacity:.5}
+    pre{white-space:pre-wrap;word-break:break-word;font:12px ui-monospace,monospace}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  </style>
+</head>
+<body>
+<div id="app">
+  <canvas id="stage"></canvas>
+  <aside>
+    <h2>A2D R7 Benchmark</h2>
+    <p>Synthetic deformation/runtime benchmark. Run WebGPU and WebGL2 separately on the same machine.</p>
+    <label>Backend</label>
+    <select id="backend">
+      <option value="webgpu">WebGPU</option>
+      <option value="webgl2">WebGL2</option>
+    </select>
+    <label>Case</label>
+    <select id="case"></select>
+    <div class="row">
+      <button id="run">Run selected</button>
+      <button id="matrix">Run matrix</button>
+    </div>
+    <div class="row">
+      <button id="copy" disabled>Copy JSON</button>
+      <button id="download" disabled>Download JSON</button>
+    </div>
+    <pre id="status">Ready.</pre>
+  </aside>
+</div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
