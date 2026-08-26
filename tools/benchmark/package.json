@@ -4,6 +4,20 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "bench": "node src/contract.mjs"
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json && vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsc -p tsconfig.test.json && node --test .test-dist/*.test.js",
+    "bench": "vite --host 0.0.0.0",
+    "compare": "node src/compare.mjs"
+  },
+  "dependencies": {
+    "@a2d/avatar-schema": "workspace:*",
+    "@a2d/runtime-api": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "5.8.3",
+    "vite": "^8.0.0"
   }
 }

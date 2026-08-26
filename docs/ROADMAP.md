@@ -16,9 +16,9 @@
 - R3 WebGL2 Reference Renderer ✅
 - R4 GPU Morph + Pseudo3D Head ✅
 - R5 Spring Physics ✅
-- R6 WebGPU Renderer ← NEXT
-- R7 Benchmark Suite
-- R8 Full Golden Avatar
+- R6 WebGPU Renderer — code complete, Draft PR hardware gate pending
+- R7 Benchmark Suite — harness implemented, hardware data pending
+- R8 Full Golden Avatar ← NEXT AFTER R6/R7 HARDWARE GATES
 
 ## Phase 2 — Auto Rig Compiler
 
