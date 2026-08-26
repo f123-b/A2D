@@ -1,9 +1,17 @@
 [project]
 name = "a2d-rig-compiler"
-version = "0.1.0"
+version = "0.2.0"
 requires-python = ">=3.11"
 dependencies = []
 
 [project.optional-dependencies]
 mesh = ["numpy", "opencv-python", "triangle"]
-dev = ["pytest", "ruff", "mypy"]
+dev = ["pytest", "ruff", "mypy", "jsonschema"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["a2d_rig_compiler*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 110
