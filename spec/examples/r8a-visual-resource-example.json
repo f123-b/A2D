@@ -1,0 +1,44 @@
+{
+  "formatVersion": 1,
+  "id": "r8a-visual-resource-example",
+  "canvas": { "width": 2048, "height": 2048 },
+  "buffers": [{ "id": "geometry", "uri": "buffers/geometry.bin", "byteLength": 0 }],
+  "textures": [
+    {
+      "id": "atlas0",
+      "uri": "textures/atlas_0.webp",
+      "byteLength": 123456,
+      "format": "webp",
+      "alphaMode": "straight",
+      "filter": "linear"
+    }
+  ],
+  "parameters": [],
+  "parts": [
+    {
+      "id": "eye-white-l",
+      "semantic": "eye_l",
+      "drawOrder": 10,
+      "material": { "textureId": "atlas0", "opacity": 1, "blendMode": "normal" },
+      "mesh": {
+        "positions": { "buffer": "geometry", "byteOffset": 0, "byteLength": 0, "componentType": "f32", "count": 0 },
+        "uvs": { "buffer": "geometry", "byteOffset": 0, "byteLength": 0, "componentType": "f32", "count": 0 },
+        "indices": { "buffer": "geometry", "byteOffset": 0, "byteLength": 0, "componentType": "u16", "count": 0 }
+      }
+    },
+    {
+      "id": "iris-l",
+      "semantic": "iris_l",
+      "drawOrder": 11,
+      "material": { "textureId": "atlas0", "opacity": 1, "blendMode": "normal" },
+      "clip": { "sources": ["eye-white-l"], "mode": "inside" },
+      "mesh": {
+        "positions": { "buffer": "geometry", "byteOffset": 0, "byteLength": 0, "componentType": "f32", "count": 0 },
+        "uvs": { "buffer": "geometry", "byteOffset": 0, "byteLength": 0, "componentType": "f32", "count": 0 },
+        "indices": { "buffer": "geometry", "byteOffset": 0, "byteLength": 0, "componentType": "u16", "count": 0 }
+      }
+    }
+  ],
+  "deformers": [],
+  "physics": []
+}
