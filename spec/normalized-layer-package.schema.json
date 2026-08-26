@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://a2d.local/spec/normalized-layer-package.schema.json",
+  "title": "A2D Normalized Semantic Layer Package v1",
+  "type": "object",
+  "required": ["version", "characterId", "canvas", "layers"],
+  "properties": {
+    "version": { "const": 1 },
+    "characterId": { "type": "string", "minLength": 1 },
+    "sourceRevision": { "type": "string", "minLength": 1 },
+    "canvas": {
+      "type": "object",
+      "required": ["width", "height"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/layer" }
+    },
+    "landmarks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/landmark" },
+      "default": []
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "semantic": {
+      "enum": [
+        "body", "cloth", "face", "brow_l", "brow_r",
+        "eye_white_l", "eye_white_r", "iris_l", "iris_r", "mouth",
+        "hair_front", "hair_side_l", "hair_side_r", "hair_back", "accessory"
+      ]
+    },
+    "bbox": {
+      "type": "object",
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0, "maximum": 1 },
+        "y": { "type": "number", "minimum": 0, "maximum": 1 },
+        "width": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "height": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "layer": {
+      "type": "object",
+      "required": ["id", "semantic", "imageUri", "bbox", "zOrder"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "semantic": { "$ref": "#/$defs/semantic" },
+        "imageUri": { "type": "string", "minLength": 1 },
+        "maskUri": { "type": "string", "minLength": 1 },
+        "parentId": { "type": ["string", "null"] },
+        "bbox": { "$ref": "#/$defs/bbox" },
+        "zOrder": { "type": "integer" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1, "default": 1 }
+      },
+      "additionalProperties": false
+    },
+    "landmark": {
+      "type": "object",
+      "required": ["id", "x", "y"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "x": { "type": "number", "minimum": 0, "maximum": 1 },
+        "y": { "type": "number", "minimum": 0, "maximum": 1 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1, "default": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}
