@@ -1,10 +1,11 @@
 import type { AvatarModelV1 } from "@a2d/avatar-schema";
 import type { LoadedA2DPackage } from "./packageLoader.js";
 import { ParameterCore } from "./parameterCore.js";
+import type { GpuTimingController } from "./gpuTiming.js";
 import { WebGL2DeformationRenderer } from "./webgl2DeformationRenderer.js";
 import { WebGPUDeformationRenderer } from "./webgpuDeformationRenderer.js";
 
-export interface DeformationRenderer {
+export interface DeformationRenderer extends GpuTimingController {
   readonly backend: "webgpu" | "webgl2";
   readonly model: AvatarModelV1;
   readonly parameters: ParameterCore;
@@ -24,7 +25,6 @@ export async function createBestDeformationRenderer(
   options?: { preferWebGPU?: boolean; requireWebGPU?: boolean }
 ): Promise<RendererSelection> {
   const preferWebGPU = options?.preferWebGPU ?? true;
-
   if (preferWebGPU && WebGPUDeformationRenderer.isSupported()) {
     try {
       return { renderer: await WebGPUDeformationRenderer.create(canvas, pkg) };
@@ -36,11 +36,7 @@ export async function createBestDeformationRenderer(
       };
     }
   }
-
-  if (options?.requireWebGPU) {
-    throw new Error("WebGPU is required but unavailable");
-  }
-
+  if (options?.requireWebGPU) throw new Error("WebGPU is required but unavailable");
   return {
     renderer: new WebGL2DeformationRenderer(canvas, pkg),
     fallbackReason: preferWebGPU ? "WebGPU is unavailable" : undefined

@@ -9,32 +9,34 @@ pnpm install
 pnpm --filter @a2d/benchmark dev
 ```
 
-Open the local page and run the same case on WebGPU and WebGL2.
-
-The runner generates synthetic Avatar IR packages in memory, so disk/ZIP parsing is excluded from the render benchmark.
+Run the same case on WebGPU and WebGL2. Synthetic Avatar IR is generated in memory so ZIP/disk parsing is excluded.
 
 ## Matrix
 
-The standard matrix isolates:
-- vertex scaling: 10k / 25k / 50k
-- draw-call scaling: 20 / 50 / 100 parts
-- parameter scaling: 64 / 128 / 256
-- physics scaling: 0 / 25 / 100 spring chains
-- integrated stress: 50k vertices / 100 parts / 256 parameters / 100 chains
-
-Every synthetic vertex has four morph influences by default.
+The standard matrix isolates 10k/25k/50k vertices, 20/50/100 parts, 64/128/256 parameters, 0/25/100 physics chains and an integrated 50k/100-part/256-parameter/100-chain stress case. Every synthetic vertex has four morph influences by default.
 
 ## Metrics
 
-- RAF frame interval p50/p95/p99
+- RAF frame p50/p95/p99
 - render submit CPU p50/p95/p99
 - physics p50/p95/p99
+- native GPU p50/p95/p99 when available
+- GPU timing sample count / coverage
 - draw calls
 - estimated static GPU bytes
 - parameter upload bytes
 - detected display refresh rate
 
-`frameMs` is display-refresh limited. `submitCpuMs` is CPU submission time and does not claim GPU completion time.
+GPU timing sources:
+
+```text
+WebGPU -> timestamp-query
+WebGL2 -> EXT_disjoint_timer_query_webgl2
+```
+
+Profiling is asynchronous and opt-in. The benchmark never uses `gl.finish()` or a per-frame GPU completion wait.
+
+`frameMs` is display-refresh limited, `submitCpuMs` is CPU submission time, and `gpuMs` is native render-pass GPU time when supported.
 
 ## Compare reports
 
@@ -42,4 +44,4 @@ Every synthetic vertex has four morph influences by default.
 pnpm --filter @a2d/benchmark compare baseline.json candidate.json --max-regression=0.08
 ```
 
-The command exits non-zero when a matched case regresses beyond the allowed ratio.
+The command exits non-zero on excessive regression. `gpu.p95` participates when both reports contain native GPU timing.

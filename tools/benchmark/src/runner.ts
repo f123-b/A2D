@@ -23,6 +23,14 @@ export interface BenchmarkResult {
   frameMs: Distribution;
   submitCpuMs: Distribution;
   physicsMs: Distribution;
+  gpuMs?: Distribution;
+  gpuTiming: {
+    supported: boolean;
+    source?: string;
+    reason?: string;
+    samples: number;
+    coverage: number;
+  };
   drawCalls: number;
   staticGpuBytesEstimate: number;
   parameterBytesPerFullUpload: number;
@@ -83,6 +91,7 @@ export async function runBenchmarkCase(
   }
 
   onProgress?.(`warming ${config.id} on ${backend}`);
+  renderer.setGpuTimingEnabled(false);
   for (let frame = 0; frame < config.warmupFrames; frame++) {
     const now = await nextFrame();
     const dt = Math.min(0.1, Math.max(0, (now - previous) / 1000));
@@ -91,33 +100,48 @@ export async function runBenchmarkCase(
     physics.update(dt, renderer.parameters);
     renderer.render();
   }
+  await renderer.collectGpuTimings();
 
   const frameSamples: number[] = [];
   const submitSamples: number[] = [];
   const physicsSamples: number[] = [];
   let drawCalls = 0;
 
-  onProgress?.(`sampling ${config.id} on ${backend}`);
+  renderer.setGpuTimingEnabled(true);
+  onProgress?.(`sampling ${config.id} on ${backend}${renderer.gpuTiming.supported ? " + GPU timer" : ""}`);
   for (let frame = 0; frame < config.sampleFrames; frame++) {
     const now = await nextFrame();
     const frameMs = now - previous;
     const dt = Math.min(0.1, Math.max(0, frameMs / 1000));
     previous = now;
-
     driveParameters(renderer, frame + config.warmupFrames);
-
     const p0 = performance.now();
     physics.update(dt, renderer.parameters);
     const p1 = performance.now();
     drawCalls = renderer.render();
     const p2 = performance.now();
-
     frameSamples.push(frameMs);
     physicsSamples.push(p1 - p0);
     submitSamples.push(p2 - p1);
   }
 
+  renderer.setGpuTimingEnabled(false);
+  const gpuSamples = await renderer.collectGpuTimings();
+  const gpuTiming = {
+    ...renderer.gpuTiming,
+    samples: gpuSamples.length,
+    coverage: config.sampleFrames > 0 ? gpuSamples.length / config.sampleFrames : 0
+  };
   renderer.destroy();
+
+  const notes = [
+    "Frame latency uses requestAnimationFrame and is display-refresh limited.",
+    "submitCpuMs measures CPU submission only; it is not GPU completion time.",
+    "gpuMs measures the render pass through backend-native asynchronous GPU timer queries when available.",
+    "GPU timing is optional and never falls back to synchronous gl.finish()/per-frame queue waits.",
+    "R7 v1 excludes texture atlas, clipping masks and overdraw-heavy art."
+  ];
+  if (!gpuTiming.supported) notes.push(`GPU timing unavailable: ${gpuTiming.reason ?? "unknown reason"}`);
 
   return {
     schemaVersion: 1,
@@ -135,14 +159,12 @@ export async function runBenchmarkCase(
     frameMs: summarize(frameSamples),
     submitCpuMs: summarize(submitSamples),
     physicsMs: summarize(physicsSamples),
+    gpuMs: gpuSamples.length > 0 ? summarize(gpuSamples) : undefined,
+    gpuTiming,
     drawCalls,
     staticGpuBytesEstimate: estimateStaticBytes(pkg),
     parameterBytesPerFullUpload: config.parameters * 4,
     fallbackReason: selection.fallbackReason,
-    notes: [
-      "Frame latency uses requestAnimationFrame and is display-refresh limited.",
-      "submitCpuMs measures CPU submission only; it is not GPU completion time.",
-      "R7 v1 excludes texture atlas, clipping masks and overdraw-heavy art."
-    ]
+    notes
   };
 }

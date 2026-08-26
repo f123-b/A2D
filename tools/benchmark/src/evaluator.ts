@@ -6,6 +6,7 @@ export interface GateEvaluation {
   target120Hz: "pass" | "fail" | "not-assessable";
   mainThreadP95: "pass" | "fail";
   physicsP95: "pass" | "fail";
+  gpuP95: "pass" | "fail" | "not-assessable";
 }
 
 export function evaluate(result: BenchmarkResult): GateEvaluation {
@@ -16,11 +17,14 @@ export function evaluate(result: BenchmarkResult): GateEvaluation {
   const target120Hz = refresh !== null && refresh >= 115
     ? (result.frameMs.p95 <= 8.75 ? "pass" : "fail")
     : "not-assessable";
-
+  const gpuAssessable = result.gpuTiming.supported && result.gpuTiming.samples >= 30 && result.gpuMs !== undefined;
   return {
     release60Hz,
     target120Hz,
     mainThreadP95: result.submitCpuMs.p95 <= PERFORMANCE_CONTRACT.desktop1080p.targetMainThreadMsP95 ? "pass" : "fail",
-    physicsP95: result.physicsMs.p95 <= PERFORMANCE_CONTRACT.desktop1080p.targetPhysicsMsP95 ? "pass" : "fail"
+    physicsP95: result.physicsMs.p95 <= PERFORMANCE_CONTRACT.desktop1080p.targetPhysicsMsP95 ? "pass" : "fail",
+    gpuP95: gpuAssessable
+      ? (result.gpuMs!.p95 <= PERFORMANCE_CONTRACT.desktop1080p.targetGpuMsP95 ? "pass" : "fail")
+      : "not-assessable"
   };
 }
