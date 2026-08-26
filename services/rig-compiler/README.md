@@ -30,19 +30,36 @@ Avatar IR + binary buffers + .a2d
 
 The compiler must not contain renderer-specific code.
 
-## P2-R1
+## P2-R1 — Rig Compiler Contract
 
-The first milestone freezes:
-
-- normalized input semantic vocabulary
-- normalized coordinates (`[0,1]`)
+Freezes:
+- normalized semantic vocabulary
+- normalized `[0,1]` coordinates
 - deterministic canonical part IDs / hierarchy / draw order
-- R8B standard parameter target
-- hair physics-rule target
-- expression preset target
-- explicit QA findings instead of silently dropping uncertain layers
+- R8B parameter target
+- hair physics rules
+- expression presets
+- explicit QA findings
 
-Run the dependency-free contract tests:
+## P2-R2 — Adaptive Mesh Reference
+
+`a2d_rig_compiler.adaptive_mesh` provides a zero-dependency deterministic reference backend:
+
+```text
+AlphaMask
+  → boundary extraction
+  → farthest-point sampling
+  → semantic adaptive sampling
+  → landmark preservation
+  → Delaunay
+  → alpha filtering
+  → quality gate
+  → A2D mesh buffers
+```
+
+The pure-Python backend is the correctness oracle. Accelerated NumPy/triangle/Rust implementations may replace it only if they preserve the compiler contract and quality gates.
+
+Run all dependency-free compiler tests:
 
 ```bash
 PYTHONPATH=services/rig-compiler \
