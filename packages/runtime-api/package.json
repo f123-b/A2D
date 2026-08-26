@@ -2,6 +2,17 @@
   "name": "@a2d/runtime-api",
   "version": "0.1.0",
   "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./jsZipReader": {
+      "types": "./src/jsZipReader.ts",
+      "default": "./dist/jsZipReader.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -12,11 +23,7 @@
     "jszip": "^3.10.1"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
+    "typescript": "5.8.3",
     "@types/node": "^24.0.0"
-  },
-  "exports": {
-    ".": "./dist/index.js",
-    "./jsZipReader": "./dist/jsZipReader.js"
   }
 }
