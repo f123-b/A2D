@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test"
+    "test": "node --test dist/*.test.js"
   },
   "dependencies": {
     "@a2d/avatar-schema": "workspace:*",
