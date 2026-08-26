@@ -50,10 +50,26 @@ test("loader rejects hierarchy cycles", async () => {
   );
 });
 
+test("loader rejects self-parenting", async () => {
+  const model = baseModel();
+  model.parts = [part("root", "root")];
+  await assert.rejects(() => loadA2DFromZip(reader(model)), (error: unknown) =>
+    error instanceof A2DPackageError && /cannot parent itself/.test(error.message)
+  );
+});
+
 test("loader rejects expression references to missing parameters", async () => {
   const model = { ...baseModel(), expressions: [{ id: "bad", bindings: [{ parameterId: "Missing", mode: "set", value: 0 }] }] };
   await assert.rejects(() => loadA2DFromZip(reader(model)), (error: unknown) =>
     error instanceof A2DPackageError && /unknown parameter Missing/.test(error.message)
+  );
+});
+
+test("loader rejects duplicate expression IDs", async () => {
+  const binding = { parameterId: "P", mode: "set", value: 0.25 };
+  const model = { ...baseModel(), expressions: [{ id: "same", bindings: [binding] }, { id: "same", bindings: [binding] }] };
+  await assert.rejects(() => loadA2DFromZip(reader(model)), (error: unknown) =>
+    error instanceof A2DPackageError && /duplicate expression id/.test(error.message)
   );
 });
 
