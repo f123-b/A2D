@@ -65,3 +65,21 @@ Run all dependency-free compiler tests:
 PYTHONPATH=services/rig-compiler \
 python -m unittest discover -s services/rig-compiler/tests -v
 ```
+
+## P2-R3 — Semantic rig
+
+P2-R3 compiles `RigPlanV1` into a topology-independent `SemanticRigPlanV1`:
+
+```text
+parts + landmarks
+      ↓
+pivots
+      ↓
+deformer tree
+      ↓
+parameter bindings
+      ↓
+morph intents
+```
+
+It deliberately does not create proxy-Z values or vertex morph deltas; those are P2-R4/P2-R5 responsibilities.

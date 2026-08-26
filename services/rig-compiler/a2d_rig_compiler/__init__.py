@@ -4,6 +4,11 @@ from .contract import (
     ExpressionBinding, ExpressionRule, Landmark, NormalizedRect, NormalizedRigInput, PhysicsRule, PlannedPart,
     QaFinding, RigPlanV1, Semantic, SemanticLayer,
 )
+
+from .semantic_rig import (
+    DeformerKind, DeformerRule, MorphIntent, ParameterBindingRule, Pivot2,
+    SemanticRigPlanV1, compile_semantic_rig,
+)
 from .adaptive_mesh import (
     AdaptiveMesh, AlphaMask, MeshConfig, MeshFinding, MeshGenerationError, MeshQuality,
     PackedMeshBuffers, Point2, Triangle, assert_mesh_quality, default_mesh_config, generate_adaptive_mesh, generate_layer_mesh, pack_mesh_buffers,
@@ -14,4 +19,5 @@ __all__ = [
     "STANDARD_PARAMETER_IDS","R8B_PARAMETER_IDS","REQUIRED_STANDARD_SEMANTICS","HAIR_PARAMETER_BY_SEMANTIC",
     "AdaptiveMesh","AlphaMask","MeshConfig","MeshFinding","MeshGenerationError","MeshQuality",
     "PackedMeshBuffers","Point2","Triangle","assert_mesh_quality","default_mesh_config","generate_adaptive_mesh","generate_layer_mesh","pack_mesh_buffers",
+    "DeformerKind","DeformerRule","MorphIntent","ParameterBindingRule","Pivot2","SemanticRigPlanV1","compile_semantic_rig",
 ]
