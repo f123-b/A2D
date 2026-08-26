@@ -2,8 +2,8 @@ import type { AvatarModelV1 } from "@a2d/avatar-schema";
 import type { LoadedA2DPackage } from "./packageLoader.js";
 import { ParameterCore } from "./parameterCore.js";
 import type { GpuTimingController } from "./gpuTiming.js";
-import { WebGL2DeformationRenderer } from "./webgl2DeformationRenderer.js";
-import { WebGPUDeformationRenderer } from "./webgpuDeformationRenderer.js";
+import { WebGL2VisualRenderer } from "./webgl2VisualRenderer.js";
+import { WebGPUVisualRenderer } from "./webgpuVisualRenderer.js";
 
 export interface DeformationRenderer extends GpuTimingController {
   readonly backend: "webgpu" | "webgl2";
@@ -25,20 +25,20 @@ export async function createBestDeformationRenderer(
   options?: { preferWebGPU?: boolean; requireWebGPU?: boolean }
 ): Promise<RendererSelection> {
   const preferWebGPU = options?.preferWebGPU ?? true;
-  if (preferWebGPU && WebGPUDeformationRenderer.isSupported()) {
+  if (preferWebGPU && WebGPUVisualRenderer.isSupported()) {
     try {
-      return { renderer: await WebGPUDeformationRenderer.create(canvas, pkg) };
+      return { renderer: await WebGPUVisualRenderer.create(canvas, pkg) };
     } catch (error) {
       if (options?.requireWebGPU) throw error;
       return {
-        renderer: new WebGL2DeformationRenderer(canvas, pkg),
+        renderer: await WebGL2VisualRenderer.create(canvas, pkg),
         fallbackReason: error instanceof Error ? error.message : String(error)
       };
     }
   }
   if (options?.requireWebGPU) throw new Error("WebGPU is required but unavailable");
   return {
-    renderer: new WebGL2DeformationRenderer(canvas, pkg),
+    renderer: await WebGL2VisualRenderer.create(canvas, pkg),
     fallbackReason: preferWebGPU ? "WebGPU is unavailable" : undefined
   };
 }

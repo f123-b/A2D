@@ -1,7 +1,7 @@
 # Phase 1 — R8A Status
 
 ## R8A-1 Resource/Compositing Foundation
-Status: **IMPLEMENTED / GPU BACKEND INTEGRATION NEXT**
+Status: **PASS**
 
 Implemented:
 - TextureResourceV1 in Avatar IR
@@ -18,15 +18,24 @@ Implemented:
 - clip source validation
 - legacy textureAtlas compatibility
 
-Tests added for:
-- premultiplied source-over
-- multi-source mask union
-- raw RGBA8 premultiplication
-- render plan texture resolution
-- self-mask rejection
-- unknown texture rejection
-- loader asset loading
-- path traversal rejection
+## R8A-2 GPU Visual Runtime
+Status: **IMPLEMENTED / HARDWARE VISUAL VALIDATION PENDING**
 
-## R8A-2 Next
-Connect the frozen visual contract to both GPU backends and add visual golden validation.
+Implemented:
+- async texture decode during backend creation
+- opaque-white fallback for legacy textureless models
+- WebGPU texture/sampler upload
+- WebGL2 texture upload
+- premultiplied source-over blend in both backends
+- one soft RGBA8 mask target per unique clip key
+- multi-source alpha-union by GPU blending
+- inside/outside clip sampling in framebuffer space
+- mask targets recreated only on resize
+- GPU timer scope includes mask + main passes
+- CPU visual golden test
+
+Next gate:
+- real GPU/browser visual smoke
+- eye-white -> iris clipping screenshot
+- WebGPU/WebGL2 screenshot parity
+- mask/overdraw benchmark extension

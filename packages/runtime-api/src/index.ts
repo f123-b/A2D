@@ -29,4 +29,7 @@ export * from "./webgpuLayout.js";
 export * from "./gpuTiming.js";
 export * from "./compositing.js";
 export * from "./textureResources.js";
+export * from "./visualTextures.js";
 export * from "./visualPlan.js";
+export * from "./webgl2VisualRenderer.js";
+export * from "./webgpuVisualRenderer.js";
