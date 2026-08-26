@@ -1,39 +1,40 @@
 export type ComponentType = "f32" | "u16" | "u32";
 
-export interface BufferDescriptor {
-  id: string;
-  uri: string;
-  byteLength: number;
-}
-
-export interface BufferView {
-  buffer: string;
-  byteOffset: number;
-  byteLength: number;
-  componentType: ComponentType;
-  count: number;
-  stride?: number;
-}
-
-export interface StructuredBufferView {
-  buffer: string;
-  byteOffset: number;
-  byteLength: number;
-  count: number;
-  stride: number;
-}
-
-export interface Parameter {
-  id: string;
-  min: number;
-  max: number;
-  default: number;
-}
+export interface BufferDescriptor { id: string; uri: string; byteLength: number; }
+export interface BufferView { buffer: string; byteOffset: number; byteLength: number; componentType: ComponentType; count: number; stride?: number; }
+export interface StructuredBufferView { buffer: string; byteOffset: number; byteLength: number; count: number; stride: number; }
+export interface Parameter { id: string; min: number; max: number; default: number; }
 
 export type PartSemantic =
   | "face" | "eye_l" | "eye_r" | "iris_l" | "iris_r" | "mouth"
   | "hair_front" | "hair_side" | "hair_back" | "body"
   | "arm_l" | "arm_r" | "cloth" | "accessory" | "other";
+
+export type TextureFormatV1 = "rgba8" | "png" | "webp";
+export type TextureAlphaModeV1 = "straight" | "premultiplied";
+export type TextureFilterV1 = "linear" | "nearest";
+
+export interface TextureResourceV1 {
+  id: string;
+  uri: string;
+  byteLength: number;
+  format: TextureFormatV1;
+  width?: number;
+  height?: number;
+  alphaMode?: TextureAlphaModeV1;
+  filter?: TextureFilterV1;
+}
+
+export interface PartMaterialV1 {
+  textureId?: string;
+  opacity?: number;
+  blendMode?: "normal";
+}
+
+export interface ClipMaskV1 {
+  sources: string[];
+  mode: "inside" | "outside";
+}
 
 export interface MeshRef {
   positions: BufferView;
@@ -49,72 +50,26 @@ export interface Part {
   semantic: PartSemantic;
   parent?: string | null;
   drawOrder: number;
+  /** @deprecated R8A uses material.textureId. */
   textureAtlas?: string | null;
+  material?: PartMaterialV1;
+  clip?: ClipMaskV1;
   mesh: MeshRef;
 }
 
 export type DeformerType = "warp" | "rotation" | "morph" | "pseudo3d_head";
+export interface ParameterBinding { parameterId: string; scale?: number; bias?: number; }
+export interface Pseudo3DHeadData { pivot: [number, number]; radius: [number, number]; depthScale: number; perspective: number; yawGain: number; pitchGain: number; }
+export interface Deformer { id: string; type: DeformerType; parent?: string | null; targets: string[]; parameterBindings?: ParameterBinding[]; data?: Record<string, unknown> | Pseudo3DHeadData; }
+export interface MorphInfluenceBufferRef { view: StructuredBufferView; strideBytes: 16; }
+export interface DeformationBuffers { morphInfluences?: MorphInfluenceBufferRef; }
 
-export interface ParameterBinding {
-  parameterId: string;
-  scale?: number;
-  bias?: number;
-}
-
-export interface Pseudo3DHeadData {
-  pivot: [number, number];
-  radius: [number, number];
-  depthScale: number;
-  perspective: number;
-  yawGain: number;
-  pitchGain: number;
-}
-
-export interface Deformer {
-  id: string;
-  type: DeformerType;
-  parent?: string | null;
-  targets: string[];
-  parameterBindings?: ParameterBinding[];
-  data?: Record<string, unknown> | Pseudo3DHeadData;
-}
-
-export interface MorphInfluenceBufferRef {
-  view: StructuredBufferView;
-  strideBytes: 16;
-}
-
-export interface DeformationBuffers {
-  morphInfluences?: MorphInfluenceBufferRef;
-}
-
-export interface PhysicsInputBindingV1 {
-  parameterId: string;
-  axis: "x" | "y";
-  gain: number;
-}
-
-export interface PhysicsOutputBindingV1 {
-  parameterId: string;
-  axis: "x" | "y";
-  source: "tip" | "average";
-  gain: number;
-  min: number;
-  max: number;
-}
-
+export interface PhysicsInputBindingV1 { parameterId: string; axis: "x" | "y"; gain: number; }
+export interface PhysicsOutputBindingV1 { parameterId: string; axis: "x" | "y"; source: "tip" | "average"; gain: number; min: number; max: number; }
 export interface SpringChainPhysics {
-  id: string;
-  type: "spring_chain";
-  nodeCount: number;
-  segmentLength: number;
-  root: [number, number];
-  gravity: [number, number];
-  damping: number;
-  stiffness: number;
-  inputBindings?: PhysicsInputBindingV1[];
-  outputBindings?: PhysicsOutputBindingV1[];
-  maxDisplacement?: number;
+  id: string; type: "spring_chain"; nodeCount: number; segmentLength: number;
+  root: [number, number]; gravity: [number, number]; damping: number; stiffness: number;
+  inputBindings?: PhysicsInputBindingV1[]; outputBindings?: PhysicsOutputBindingV1[]; maxDisplacement?: number;
 }
 
 export interface AvatarModelV1 {
@@ -123,6 +78,7 @@ export interface AvatarModelV1 {
   name?: string;
   canvas: { width: number; height: number };
   buffers: BufferDescriptor[];
+  textures?: TextureResourceV1[];
   parameters: Parameter[];
   parts: Part[];
   deformers: Deformer[];
@@ -137,5 +93,4 @@ export const STANDARD_PARAMETER_IDS = [
   "ParamMouthOpenY", "ParamMouthForm",
   "ParamBrowLY", "ParamBrowRY", "ParamBrowLAngle", "ParamBrowRAngle"
 ] as const;
-
 export type StandardParameterId = typeof STANDARD_PARAMETER_IDS[number];
