@@ -1,6 +1,6 @@
 # R4 GPU Deformation Contract v0.1
 
-Status: **FROZEN FOR IMPLEMENTATION**
+Status: **FROZEN FOR IMPLEMENTATION — amended by ADR-0004**
 
 ## Goals
 - Editor and Runtime use the same deformation contract.
@@ -80,7 +80,8 @@ z1 = -sin(yaw)*x0 + cos(yaw)*z0
 y1 = cos(pitch)*y0 - sin(pitch)*z1
 z2 = sin(pitch)*y0 + cos(pitch)*z1
 
-scale = 1 / max(0.25, 1 + perspective*z2)
+depthDelta = z2 - z0
+scale = 1 / max(0.25, 1 + perspective*depthDelta)
 
 x2 = x1*scale + pivotX
 y2 = y1*scale + pivotY

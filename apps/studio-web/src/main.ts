@@ -1,7 +1,8 @@
 import {
+  createBestDeformationRenderer,
   createPhysicsFromModel,
-  loadA2DFromZip,
-  WebGL2DeformationRenderer
+  type DeformationRenderer,
+  loadA2DFromZip
 } from "@a2d/runtime-api";
 import { zipReaderFromArrayBuffer } from "@a2d/runtime-api/jsZipReader";
 
@@ -14,19 +15,26 @@ const mouthValue = document.querySelector<HTMLSpanElement>("#mouthValue")!;
 const status = document.querySelector<HTMLDivElement>("#status")!;
 const reset = document.querySelector<HTMLButtonElement>("#reset")!;
 
-let renderer: WebGL2DeformationRenderer | null = null;
+let renderer: DeformationRenderer | null = null;
 let physics: ReturnType<typeof createPhysicsFromModel> | null = null;
+let fallbackReason: string | undefined;
 let raf = 0;
 let last = performance.now();
-
 let frameTimes: number[] = [];
 let cpuTimes: number[] = [];
 
 function percentile(values: number[], p: number): number {
   if (values.length === 0) return 0;
-  const sorted = [...values].sort((a,b) => a-b);
-  const i = Math.min(sorted.length-1, Math.floor((sorted.length-1)*p));
-  return sorted[i];
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * p));
+  return sorted[index];
+}
+
+function requestedBackend(): { preferWebGPU: boolean; requireWebGPU: boolean } {
+  const backend = new URLSearchParams(location.search).get("backend");
+  if (backend === "webgl2") return { preferWebGPU: false, requireWebGPU: false };
+  if (backend === "webgpu") return { preferWebGPU: true, requireWebGPU: true };
+  return { preferWebGPU: true, requireWebGPU: false };
 }
 
 function loop(now: number) {
@@ -36,15 +44,15 @@ function loop(now: number) {
     return;
   }
 
-  const dt = Math.min(0.1, Math.max(0, (now-last)/1000));
+  const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
   last = now;
 
   const t0 = performance.now();
   const physicsStats = physics.update(dt, renderer.parameters);
   const drawCalls = renderer.render();
-  const cpuMs = performance.now()-t0;
+  const cpuMs = performance.now() - t0;
 
-  frameTimes.push(dt*1000);
+  frameTimes.push(dt * 1000);
   cpuTimes.push(cpuMs);
 
   if (frameTimes.length >= 120) {
@@ -53,16 +61,18 @@ function loop(now: number) {
       : 0;
 
     status.textContent =
-      `backend: webgl2-r5\n` +
+      `backend: ${renderer.backend}\n` +
+      `${fallbackReason ? `fallback: ${fallbackReason}\n` : ""}` +
       `parts: ${renderer.model.parts.length}\n` +
       `parameters: ${renderer.model.parameters.length}\n` +
       `physics chains: ${physics.chains.length}\n` +
       `physics substeps: ${physicsStats.subSteps}\n` +
       `ParamHairX: ${hair.toFixed(4)}\n` +
       `draw calls: ${drawCalls}\n` +
-      `frame p50: ${percentile(frameTimes,0.50).toFixed(2)} ms\n` +
-      `frame p95: ${percentile(frameTimes,0.95).toFixed(2)} ms\n` +
-      `submit cpu p95: ${percentile(cpuTimes,0.95).toFixed(3)} ms`;
+      `frame p50: ${percentile(frameTimes, 0.50).toFixed(2)} ms\n` +
+      `frame p95: ${percentile(frameTimes, 0.95).toFixed(2)} ms\n` +
+      `frame p99: ${percentile(frameTimes, 0.99).toFixed(2)} ms\n` +
+      `submit cpu p95: ${percentile(cpuTimes, 0.95).toFixed(3)} ms`;
 
     frameTimes = [];
     cpuTimes = [];
@@ -76,12 +86,17 @@ fileInput.addEventListener("change", async () => {
   try {
     status.textContent = "loading...";
     renderer?.destroy();
+    renderer = null;
+    physics = null;
+    fallbackReason = undefined;
 
     const bytes = await file.arrayBuffer();
     const reader = await zipReaderFromArrayBuffer(bytes);
     const pkg = await loadA2DFromZip(reader);
 
-    renderer = new WebGL2DeformationRenderer(canvas, pkg);
+    const selection = await createBestDeformationRenderer(canvas, pkg, requestedBackend());
+    renderer = selection.renderer;
+    fallbackReason = selection.fallbackReason;
     physics = createPhysicsFromModel(pkg.model, {
       physicsHz: 120,
       maxFrameDt: 0.1,
@@ -100,6 +115,8 @@ fileInput.addEventListener("change", async () => {
 
     status.textContent =
       `loaded: ${pkg.model.name ?? pkg.model.id}\n` +
+      `backend: ${renderer.backend}\n` +
+      `${fallbackReason ? `fallback: ${fallbackReason}\n` : ""}` +
       `parts: ${pkg.model.parts.length}\n` +
       `physics chains: ${physics.chains.length}`;
   } catch (error) {
@@ -137,7 +154,6 @@ reset.addEventListener("click", () => {
 });
 
 raf = requestAnimationFrame(loop);
-
 window.addEventListener("beforeunload", () => {
   cancelAnimationFrame(raf);
   renderer?.destroy();

@@ -67,7 +67,10 @@ export function applyPseudo3DHead(
   const y1 = cp * y0 - sp * z1;
   const z2 = sp * y0 + cp * z1;
 
-  const perspectiveScale = 1 / Math.max(0.25, 1 + data.perspective * z2);
+  // Perspective is relative to the vertex's neutral proxy depth so that
+  // ParamAngleX/Y = 0 preserves the authored 2D pose exactly.
+  const depthDelta = z2 - z0;
+  const perspectiveScale = 1 / Math.max(0.25, 1 + data.perspective * depthDelta);
 
   return [
     x1 * perspectiveScale + data.pivot[0],
