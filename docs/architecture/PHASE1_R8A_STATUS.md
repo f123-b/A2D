@@ -19,23 +19,37 @@ Implemented:
 - legacy textureAtlas compatibility
 
 ## R8A-2 GPU Visual Runtime
-Status: **IMPLEMENTED / HARDWARE VISUAL VALIDATION PENDING**
+Status: **PASS CODE / HARDWARE VISUAL VALIDATION PENDING**
 
 Implemented:
 - async texture decode during backend creation
 - opaque-white fallback for legacy textureless models
-- WebGPU texture/sampler upload
-- WebGL2 texture upload
+- WebGPU/WebGL2 texture upload and sampling
 - premultiplied source-over blend in both backends
 - one soft RGBA8 mask target per unique clip key
 - multi-source alpha-union by GPU blending
-- inside/outside clip sampling in framebuffer space
+- inside/outside clip sampling
 - mask targets recreated only on resize
 - GPU timer scope includes mask + main passes
-- CPU visual golden test
+- CPU visual golden math
+
+## R8A-3 Visual Golden + Profiling
+Status: **IMPLEMENTED / HARDWARE DATA PENDING**
+
+Implemented:
+- deterministic packaged visual Golden `.a2d`
+- 9-part stylized avatar fixture
+- one atlas texture
+- left/right eye-white -> iris clipping
+- pseudo3d head parameters
+- physics-driven front-hair morph
+- artifact SHA-256 integrity test
+- six visual benchmark cases
+- texture/mask/overdraw workload generation
+- visual memory/draw-cost estimates in benchmark output
+- 4/16/32-mask stress cases
 
 Next gate:
-- real GPU/browser visual smoke
-- eye-white -> iris clipping screenshot
-- WebGPU/WebGL2 screenshot parity
-- mask/overdraw benchmark extension
+- run real WebGPU/WebGL2 visual benchmark reports
+- capture golden-model screenshots on both backends
+- decide whether v1 full-frame mask targets need immediate mask-atlas optimization

@@ -4,7 +4,8 @@ import {
   type DeformationRenderer
 } from "@a2d/runtime-api";
 import type { BenchmarkCase } from "./contract.js";
-import { createSyntheticAvatar, estimateStaticBytes } from "./syntheticAvatar.js";
+import { estimateStaticBytes } from "./syntheticAvatar.js";
+import { createBenchmarkAvatar, estimateVisualCost, type VisualCostEstimate } from "./visualSyntheticAvatar.js";
 import { estimateRefreshHz, summarize, type Distribution } from "./statistics.js";
 
 export interface BenchmarkResult {
@@ -34,6 +35,7 @@ export interface BenchmarkResult {
   drawCalls: number;
   staticGpuBytesEstimate: number;
   parameterBytesPerFullUpload: number;
+  visual?: VisualCostEstimate;
   fallbackReason?: string;
   notes: string[];
 }
@@ -59,13 +61,14 @@ export async function runBenchmarkCase(
   backend: "webgpu" | "webgl2",
   onProgress?: (message: string) => void
 ): Promise<BenchmarkResult> {
-  const pkg = createSyntheticAvatar(config);
+  const pkg = createBenchmarkAvatar(config);
   const dpr = devicePixelRatio || 1;
   canvas.style.width = `${1920 / dpr}px`;
   canvas.style.height = `${1080 / dpr}px`;
   canvas.width = 1920;
   canvas.height = 1080;
 
+  const visual = estimateVisualCost(pkg, 1920, 1080);
   const selection = await createBestDeformationRenderer(canvas, pkg, {
     preferWebGPU: backend === "webgpu",
     requireWebGPU: backend === "webgpu"
@@ -137,10 +140,15 @@ export async function runBenchmarkCase(
   const notes = [
     "Frame latency uses requestAnimationFrame and is display-refresh limited.",
     "submitCpuMs measures CPU submission only; it is not GPU completion time.",
-    "gpuMs measures the render pass through backend-native asynchronous GPU timer queries when available.",
-    "GPU timing is optional and never falls back to synchronous gl.finish()/per-frame queue waits.",
-    "R7 v1 excludes texture atlas, clipping masks and overdraw-heavy art."
+    "gpuMs measures all backend-native visual render work, including mask passes when present.",
+    "GPU timing is optional and never falls back to synchronous gl.finish()/per-frame queue waits."
   ];
+  if (visual) {
+    notes.push("R8A visual case includes texture sampling, premultiplied blending, soft masks and configured overdraw.");
+    notes.push("maskTargetBytes estimates full-frame RGBA8 targets; it intentionally exposes the cost of the v1 simple mask architecture.");
+  } else {
+    notes.push("Core R7 case has no declared textures or clipping masks.");
+  }
   if (!gpuTiming.supported) notes.push(`GPU timing unavailable: ${gpuTiming.reason ?? "unknown reason"}`);
 
   return {
@@ -162,8 +170,9 @@ export async function runBenchmarkCase(
     gpuMs: gpuSamples.length > 0 ? summarize(gpuSamples) : undefined,
     gpuTiming,
     drawCalls,
-    staticGpuBytesEstimate: estimateStaticBytes(pkg),
+    staticGpuBytesEstimate: estimateStaticBytes(pkg) + (visual?.textureGpuBytesEstimate ?? 0) + (visual?.maskTargetBytes ?? 0),
     parameterBytesPerFullUpload: config.parameters * 4,
+    visual,
     fallbackReason: selection.fallbackReason,
     notes
   };
