@@ -49,3 +49,10 @@ A real browser/GPU smoke test is still required to validate GLSL compilation and
 
 ## Next gate
 R5: deterministic spring-chain physics.
+
+## 2026-08-26 semantic amendment
+
+ADR-0004 corrected Pseudo3D perspective to use depth change relative to neutral proxy depth.
+This guarantees `ParamAngleX = ParamAngleY = 0` preserves the authored mesh.
+`spec/examples/r4-golden-vectors.json` has been regenerated and supersedes the original numeric vectors.
+The `.a2d` schema and binary layout are unchanged.

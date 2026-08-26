@@ -101,7 +101,8 @@ void main() {
   float y1 = cp * local.y - sp * z1;
   float z2 = sp * local.y + cp * z1;
 
-  float persp = 1.0 / max(0.25, 1.0 + u_headPerspective * z2);
+  float depthDelta = z2 - z0;
+  float persp = 1.0 / max(0.25, 1.0 + u_headPerspective * depthDelta);
   p = vec2(x1, y1) * persp + u_headPivot;
 
   float roll = radians(angleZ);
@@ -358,6 +359,8 @@ export class WebGL2DeformationRenderer {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.parameterTexture);
 
+    // Batch the dirty interval into row-contiguous uploads.
+    // With the v1 <=256 parameter contract this is normally one texSubImage2D call.
     let index = range.start;
     while (index < range.endExclusive) {
       const x = index % this.parameterTexSize[0];
