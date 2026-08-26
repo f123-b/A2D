@@ -2,8 +2,11 @@ import type { AvatarModelV1 } from "@a2d/avatar-schema";
 import type { LoadedA2DPackage } from "./packageLoader.js";
 import { ParameterCore } from "./parameterCore.js";
 import type { GpuTimingController } from "./gpuTiming.js";
+import { WebGL2DeformationRenderer } from "./webgl2DeformationRenderer.js";
+import { WebGPUDeformationRenderer } from "./webgpuDeformationRenderer.js";
 import { WebGL2VisualRenderer } from "./webgl2VisualRenderer.js";
 import { WebGPUVisualRenderer } from "./webgpuVisualRenderer.js";
+import { hasVisualResources } from "./visualRuntimeMode.js";
 
 export interface DeformationRenderer extends GpuTimingController {
   readonly backend: "webgpu" | "webgl2";
@@ -17,6 +20,7 @@ export interface DeformationRenderer extends GpuTimingController {
 export interface RendererSelection {
   renderer: DeformationRenderer;
   fallbackReason?: string;
+  visual: boolean;
 }
 
 export async function createBestDeformationRenderer(
@@ -25,20 +29,34 @@ export async function createBestDeformationRenderer(
   options?: { preferWebGPU?: boolean; requireWebGPU?: boolean }
 ): Promise<RendererSelection> {
   const preferWebGPU = options?.preferWebGPU ?? true;
-  if (preferWebGPU && WebGPUVisualRenderer.isSupported()) {
+  const visual = hasVisualResources(pkg.model);
+
+  if (preferWebGPU && WebGPUDeformationRenderer.isSupported()) {
     try {
-      return { renderer: await WebGPUVisualRenderer.create(canvas, pkg) };
+      const renderer = visual
+        ? await WebGPUVisualRenderer.create(canvas, pkg)
+        : await WebGPUDeformationRenderer.create(canvas, pkg);
+      return { renderer, visual };
     } catch (error) {
       if (options?.requireWebGPU) throw error;
+      const renderer = visual
+        ? await WebGL2VisualRenderer.create(canvas, pkg)
+        : new WebGL2DeformationRenderer(canvas, pkg);
       return {
-        renderer: await WebGL2VisualRenderer.create(canvas, pkg),
+        renderer,
+        visual,
         fallbackReason: error instanceof Error ? error.message : String(error)
       };
     }
   }
+
   if (options?.requireWebGPU) throw new Error("WebGPU is required but unavailable");
+  const renderer = visual
+    ? await WebGL2VisualRenderer.create(canvas, pkg)
+    : new WebGL2DeformationRenderer(canvas, pkg);
   return {
-    renderer: await WebGL2VisualRenderer.create(canvas, pkg),
+    renderer,
+    visual,
     fallbackReason: preferWebGPU ? "WebGPU is unavailable" : undefined
   };
 }

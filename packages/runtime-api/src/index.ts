@@ -31,5 +31,6 @@ export * from "./compositing.js";
 export * from "./textureResources.js";
 export * from "./visualTextures.js";
 export * from "./visualPlan.js";
+export * from "./visualRuntimeMode.js";
 export * from "./webgl2VisualRenderer.js";
 export * from "./webgpuVisualRenderer.js";
