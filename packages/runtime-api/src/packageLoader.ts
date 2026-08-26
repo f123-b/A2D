@@ -89,6 +89,59 @@ function validateTexture(texture: TextureResourceV1): void {
   }
 }
 
+function validatePartHierarchy(model: AvatarModelV1, partIds: Set<string>): void {
+  const parentById = new Map<string, string>();
+  for (const part of model.parts) {
+    if (part.parent === undefined || part.parent === null) continue;
+    if (!part.parent) throw new A2DPackageError(`part ${part.id} parent must not be empty`);
+    if (part.parent === part.id) throw new A2DPackageError(`part ${part.id} cannot parent itself`);
+    if (!partIds.has(part.parent)) throw new A2DPackageError(`part ${part.id} references unknown parent ${part.parent}`);
+    parentById.set(part.id, part.parent);
+  }
+
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+  const visit = (id: string): void => {
+    if (visited.has(id)) return;
+    if (visiting.has(id)) throw new A2DPackageError(`part hierarchy contains a cycle at ${id}`);
+    visiting.add(id);
+    const parent = parentById.get(id);
+    if (parent) visit(parent);
+    visiting.delete(id);
+    visited.add(id);
+  };
+  for (const id of partIds) visit(id);
+}
+
+function validateExpressions(model: AvatarModelV1, parameterIds: Set<string>): void {
+  const expressionIds = new Set<string>();
+  const parameterMap = new Map(model.parameters.map(p => [p.id, p]));
+  for (const expression of model.expressions ?? []) {
+    if (!expression.id) throw new A2DPackageError("expression.id is required");
+    if (expressionIds.has(expression.id)) throw new A2DPackageError(`duplicate expression id: ${expression.id}`);
+    expressionIds.add(expression.id);
+    if (expression.bindings.length === 0) throw new A2DPackageError(`expression ${expression.id} bindings must not be empty`);
+
+    for (const binding of expression.bindings) {
+      if (!parameterIds.has(binding.parameterId)) {
+        throw new A2DPackageError(`expression ${expression.id} references unknown parameter ${binding.parameterId}`);
+      }
+      if (binding.mode !== "set" && binding.mode !== "add") {
+        throw new A2DPackageError(`expression ${expression.id} binding ${binding.parameterId} has invalid mode ${String(binding.mode)}`);
+      }
+      if (!Number.isFinite(binding.value)) {
+        throw new A2DPackageError(`expression ${expression.id} binding ${binding.parameterId} must be finite`);
+      }
+      if (binding.mode === "set") {
+        const parameter = parameterMap.get(binding.parameterId)!;
+        if (binding.value < parameter.min || binding.value > parameter.max) {
+          throw new A2DPackageError(`expression ${expression.id} set value out of range for ${binding.parameterId}`);
+        }
+      }
+    }
+  }
+}
+
 function validateModel(model: AvatarModelV1): void {
   if (model.formatVersion !== 1) throw new A2DPackageError(`unsupported formatVersion: ${model.formatVersion}`);
   if (!model.id) throw new A2DPackageError("model.id is required");
@@ -126,6 +179,8 @@ function validateModel(model: AvatarModelV1): void {
     if (part.material?.opacity !== undefined && !(part.material.opacity >= 0 && part.material.opacity <= 1)) throw new A2DPackageError(`part ${part.id} material.opacity must be 0..1`);
   }
 
+  validatePartHierarchy(model, partIds);
+
   for (const part of model.parts) {
     if (!part.clip) continue;
     if (part.clip.sources.length === 0) throw new A2DPackageError(`part ${part.id} clip.sources must not be empty`);
@@ -134,6 +189,8 @@ function validateModel(model: AvatarModelV1): void {
       if (!partIds.has(source)) throw new A2DPackageError(`part ${part.id} clip references unknown part ${source}`);
     }
   }
+
+  validateExpressions(model, parameterIds);
 
   const morphInfluences = model.deformationBuffers?.morphInfluences;
   if (morphInfluences) {
