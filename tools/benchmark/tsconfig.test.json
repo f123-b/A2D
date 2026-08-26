@@ -14,6 +14,8 @@
     "src/statistics.ts",
     "src/contract.ts",
     "src/syntheticAvatar.ts",
+    "src/evaluator.ts",
+    "src/runner.ts",
     "src/**/*.test.ts"
   ]
 }

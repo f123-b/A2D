@@ -19,13 +19,10 @@ export interface RuntimeStats {
 export interface AvatarInstance {
   readonly model: AvatarModelV1;
   readonly parameterValues: Float32Array;
-
   setParameter(index: number, value: number): void;
   setParameters(values: Float32Array): void;
-
   update(dtSeconds: number): void;
   render(): void;
-
   getStats(): RuntimeStats;
   destroy(): void;
 }
@@ -43,3 +40,4 @@ export * from "./physicsFactory.js";
 export * from "./webgpuDeformationRenderer.js";
 export * from "./runtimeBackend.js";
 export * from "./webgpuLayout.js";
+export * from "./gpuTiming.js";
