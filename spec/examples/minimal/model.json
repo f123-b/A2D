@@ -1,0 +1,68 @@
+{
+  "formatVersion": 1,
+  "id": "minimal-golden",
+  "name": "Minimal Golden Avatar",
+  "canvas": {
+    "width": 1024,
+    "height": 1024
+  },
+  "buffers": [
+    {
+      "id": "geometry",
+      "uri": "buffers/geometry.bin",
+      "byteLength": 76
+    }
+  ],
+  "parameters": [
+    {
+      "id": "ParamAngleX",
+      "min": -30,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "id": "ParamEyeLOpen",
+      "min": 0,
+      "max": 1,
+      "default": 1
+    },
+    {
+      "id": "ParamEyeROpen",
+      "min": 0,
+      "max": 1,
+      "default": 1
+    },
+    {
+      "id": "ParamMouthOpenY",
+      "min": 0,
+      "max": 1,
+      "default": 0
+    }
+  ],
+  "parts": [
+    {
+      "id": "face",
+      "name": "Face",
+      "semantic": "face",
+      "parent": null,
+      "drawOrder": 0,
+      "textureAtlas": null,
+      "mesh": {
+        "positions": {"buffer":"geometry","byteOffset":0,"byteLength":32,"componentType":"f32","count":4,"stride":8},
+        "uvs": {"buffer":"geometry","byteOffset":32,"byteLength":32,"componentType":"f32","count":4,"stride":8},
+        "indices": {"buffer":"geometry","byteOffset":64,"byteLength":12,"componentType":"u16","count":6}
+      }
+    }
+  ],
+  "deformers": [
+    {
+      "id": "head-x",
+      "type": "pseudo3d_head",
+      "parent": null,
+      "targets": ["face"],
+      "parameterBindings": [{"parameterId":"ParamAngleX","scale":1,"bias":0}],
+      "data": {"proxy":"ellipsoid","radiusX":1.0,"radiusY":1.15,"depthScale":0.35}
+    }
+  ],
+  "physics": []
+}

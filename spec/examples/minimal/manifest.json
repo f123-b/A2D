@@ -1,0 +1,7 @@
+{
+  "containerVersion": 1,
+  "model": "model.json",
+  "entryBuffers": [
+    "buffers/geometry.bin"
+  ]
+}

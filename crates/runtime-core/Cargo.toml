@@ -1,0 +1,9 @@
+[package]
+name = "a2d-runtime-core"
+version = "0.1.0"
+edition = "2024"
+description = "Backend-neutral runtime state and parameter evaluation"
+license = "Apache-2.0"
+
+[lib]
+crate-type = ["rlib", "cdylib"]

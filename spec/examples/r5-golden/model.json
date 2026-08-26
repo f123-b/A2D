@@ -1,0 +1,35 @@
+{
+  "formatVersion": 1,
+  "id": "r5-golden",
+  "name": "R5 Golden Physics Avatar",
+  "canvas": {"width":1,"height":1},
+  "buffers": [{"id":"deform","uri":"buffers/deform.bin","byteLength":188}],
+  "parameters": [
+    {"id":"ParamAngleX","min":-30,"max":30,"default":0},
+    {"id":"ParamAngleY","min":-30,"max":30,"default":0},
+    {"id":"ParamAngleZ","min":-30,"max":30,"default":0},
+    {"id":"ParamMouthOpenY","min":0,"max":1,"default":0},
+    {"id":"ParamHairX","min":-1,"max":1,"default":0}
+  ],
+  "parts": [{
+    "id":"hair_front","semantic":"hair_front","drawOrder":0,"textureAtlas":null,
+    "mesh": {
+      "positions":{"buffer":"deform","byteOffset":0,"byteLength":32,"componentType":"f32","count":4,"stride":8},
+      "uvs":{"buffer":"deform","byteOffset":32,"byteLength":32,"componentType":"f32","count":4,"stride":8},
+      "indices":{"buffer":"deform","byteOffset":112,"byteLength":12,"componentType":"u16","count":6},
+      "proxyZ":{"buffer":"deform","byteOffset":64,"byteLength":16,"componentType":"f32","count":4,"stride":4},
+      "influenceRanges":{"buffer":"deform","byteOffset":80,"byteLength":32,"componentType":"u32","count":4,"stride":8}
+    }
+  }],
+  "deformers": [{
+    "id":"head","type":"pseudo3d_head","targets":["hair_front"],
+    "parameterBindings":[{"parameterId":"ParamAngleX"},{"parameterId":"ParamAngleY"},{"parameterId":"ParamAngleZ"}],
+    "data":{"pivot":[0.5,0.5],"radius":[0.5,0.6],"depthScale":0.25,"perspective":0.35,"yawGain":1.0,"pitchGain":1.0}
+  }],
+  "deformationBuffers":{"morphInfluences":{"view":{"buffer":"deform","byteOffset":124,"byteLength":64,"count":4,"stride":16},"strideBytes":16}},
+  "physics": [{
+    "id":"hair-front-x","type":"spring_chain","nodeCount":5,"segmentLength":0.08,"root":[0.5,0.2],"gravity":[0.0,0.8],"damping":0.08,"stiffness":0.95,"maxDisplacement":1.0,
+    "inputBindings":[{"parameterId":"ParamAngleX","axis":"x","gain":0.004}],
+    "outputBindings":[{"parameterId":"ParamHairX","axis":"x","source":"tip","gain":2.0,"min":-1.0,"max":1.0}]
+  }]
+}

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A2D Runtime Reference</title>
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; font-family: Inter, system-ui, sans-serif; background:#111; color:#eee; }
+    #app { height:100%; display:grid; grid-template-columns: 1fr 280px; }
+    canvas { width:100%; height:100%; min-width:0; }
+    aside { padding:18px; border-left:1px solid #333; background:#171717; }
+    input[type=range] { width:100%; }
+    .stat { font-family: ui-monospace, monospace; margin-top:12px; white-space:pre-wrap; }
+    button { width:100%; padding:10px; margin-top:10px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <canvas id="stage"></canvas>
+    <aside>
+      <h3>A2D Runtime R3</h3>
+      <p>加载一个 `.a2d` 文件验证 Package Loader + Parameter Core + WebGL2。</p>
+      <input id="file" type="file" accept=".a2d,.zip" />
+      <label>ParamAngleX <span id="angleValue">0</span></label>
+      <input id="angle" type="range" min="-30" max="30" step="0.1" value="0" />
+      <label>ParamMouthOpenY <span id="mouthValue">0</span></label>
+      <input id="mouth" type="range" min="0" max="1" step="0.01" value="0" />
+      <button id="reset">Reset</button>
+      <div id="status" class="stat">waiting for .a2d</div>
+    </aside>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

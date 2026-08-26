@@ -1,0 +1,12 @@
+{
+  "environment": {"runtime": "Node.js v22.16.0", "note": "Microbenchmark only; not a browser/GPU performance claim."},
+  "physicsHz": 120,
+  "nodeCountPerChain": 5,
+  "constraintIterations": 4,
+  "stepsPerCase": 10000,
+  "results": [
+    {"chainCount": 1, "totalMs": 25.354461000000004, "usPerPhysicsFrame": 2.5354461, "usPerChainPerFrame": 2.5354461},
+    {"chainCount": 10, "totalMs": 94.706028, "usPerPhysicsFrame": 9.4706028, "usPerChainPerFrame": 0.94706028},
+    {"chainCount": 100, "totalMs": 871.4454130000001, "usPerPhysicsFrame": 87.14454130000001, "usPerChainPerFrame": 0.8714454130000001}
+  ]
+}

@@ -1,0 +1,9 @@
+[project]
+name = "a2d-rig-compiler"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+mesh = ["numpy", "opencv-python", "triangle"]
+dev = ["pytest", "ruff", "mypy"]

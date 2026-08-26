@@ -1,0 +1,25 @@
+node_modules/
+dist/
+target/
+.venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+benchmark-results/
+models/
+weights/
+outputs/
+
+# Editors
+.idea/
+.vscode/
+
+# Logs / coverage / temp
+*.log
+coverage/
+.tmp/
+tmp/
+
+# Local package manager state
+.pnpm-store/
