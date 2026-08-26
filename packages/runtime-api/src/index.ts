@@ -23,6 +23,7 @@ export * from "./deformationBuffers.js";
 export * from "./webgl2DeformationRenderer.js";
 export * from "./physics.js";
 export * from "./physicsFactory.js";
+export * from "./expression.js";
 export * from "./webgpuDeformationRenderer.js";
 export * from "./runtimeBackend.js";
 export * from "./webgpuLayout.js";

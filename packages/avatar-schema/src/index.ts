@@ -72,6 +72,18 @@ export interface SpringChainPhysics {
   inputBindings?: PhysicsInputBindingV1[]; outputBindings?: PhysicsOutputBindingV1[]; maxDisplacement?: number;
 }
 
+export type ExpressionBindingModeV1 = "set" | "add";
+export interface ExpressionBindingV1 {
+  parameterId: string;
+  mode: ExpressionBindingModeV1;
+  value: number;
+}
+export interface ExpressionPresetV1 {
+  id: string;
+  label?: string;
+  bindings: ExpressionBindingV1[];
+}
+
 export interface AvatarModelV1 {
   formatVersion: 1;
   id: string;
@@ -84,6 +96,7 @@ export interface AvatarModelV1 {
   deformers: Deformer[];
   deformationBuffers?: DeformationBuffers;
   physics?: SpringChainPhysics[];
+  expressions?: ExpressionPresetV1[];
 }
 
 export const STANDARD_PARAMETER_IDS = [
