@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping
 
+from .completion import CompletionProvider, OcclusionCompletionConfig, complete_occlusions
 from .contract import DecomposerResultV1, SourceImageRgba
 from .pipeline import DecomposerConfig, decompose_image
 from .production import EncodedImageDecoder, decode_source_image
@@ -23,21 +24,11 @@ class SingleImageCompileResultV1:
 
 
 def to_rig_compiler_inputs(result: DecomposerResultV1) -> RigCompilerBridgeInputV1:
-    """Convert P3 normalized output to the existing P2 one-click compiler ABI.
-
-    Imports are intentionally local so the decomposer package remains usable as
-    a standalone zero-dependency normalization service.
-    """
     if not result.ready:
         raise ValueError("decomposer result is not ready")
     from a2d_rig_compiler import (
-        AlphaMask,
-        Landmark,
-        NormalizedRect,
-        NormalizedRigInput,
-        RgbaImage,
-        Semantic,
-        SemanticLayer,
+        AlphaMask, Landmark, NormalizedRect, NormalizedRigInput,
+        RgbaImage, Semantic, SemanticLayer,
     )
 
     asset_by_id = {item.layer_id: item for item in result.assets}
@@ -52,9 +43,7 @@ def to_rig_compiler_inputs(result: DecomposerResultV1) -> RigCompilerBridgeInput
         if asset is None:
             raise ValueError(f"missing normalized asset for layer {record.id}")
         if asset.width < 2 or asset.height < 2:
-            raise ValueError(
-                f"normalized asset {record.id} is too small for P2 mesh generation"
-            )
+            raise ValueError(f"normalized asset {record.id} is too small for P2 mesh generation")
         x, y, width, height = record.bbox
         layers.append(SemanticLayer(
             id=record.id,
@@ -69,17 +58,10 @@ def to_rig_compiler_inputs(result: DecomposerResultV1) -> RigCompilerBridgeInput
         masks[record.id] = AlphaMask.from_u8(asset.width, asset.height, asset.alpha)
         images[record.id] = RgbaImage(asset.width, asset.height, asset.rgba)
 
-    landmarks = tuple(
-        Landmark(item.id, item.x, item.y, item.confidence)
-        for item in result.landmarks
-    )
+    landmarks = tuple(Landmark(item.id, item.x, item.y, item.confidence) for item in result.landmarks)
     value = NormalizedRigInput(
-        result.character_id,
-        result.canvas_width,
-        result.canvas_height,
-        tuple(layers),
-        landmarks,
-        result.source_revision,
+        result.character_id, result.canvas_width, result.canvas_height,
+        tuple(layers), landmarks, result.source_revision,
     )
     return RigCompilerBridgeInputV1(value, masks, images)
 
@@ -92,32 +74,27 @@ def decompose_and_compile(
     decomposer_config: DecomposerConfig | None = None,
     refinement_config: SemanticRefinementConfig | None = None,
     refine_semantics: bool = True,
+    completion_provider: CompletionProvider | None = None,
+    completion_config: OcclusionCompletionConfig | None = None,
+    complete_hidden: bool = True,
     qa_config: Any | None = None,
     atlas_config: Any | None = None,
 ) -> SingleImageCompileResultV1:
-    """Run P3 normalization/refinement then P2 one-click compilation."""
-    decomposed = decompose_image(
-        character_id,
-        image,
-        backend,
-        config=decomposer_config,
-    )
+    """Run P3 normalize/refine/complete then P2 one-click compilation."""
+    decomposed = decompose_image(character_id, image, backend, config=decomposer_config)
     if decomposed.ready and refine_semantics:
-        decomposed = refine_decomposer_result(
-            decomposed,
-            image,
-            config=refinement_config,
+        decomposed = refine_decomposer_result(decomposed, image, config=refinement_config)
+    if decomposed.ready and complete_hidden:
+        decomposed = complete_occlusions(
+            decomposed, image, completion_provider, config=completion_config,
         )
     if not decomposed.ready:
         return SingleImageCompileResultV1(decomposed, None)
     bridged = to_rig_compiler_inputs(decomposed)
     from a2d_rig_compiler import compile_avatar
     compiled = compile_avatar(
-        bridged.value,
-        bridged.masks,
-        bridged.images,
-        qa_config=qa_config,
-        atlas_config=atlas_config,
+        bridged.value, bridged.masks, bridged.images,
+        qa_config=qa_config, atlas_config=atlas_config,
     )
     return SingleImageCompileResultV1(decomposed, compiled)
 
@@ -131,17 +108,21 @@ def decode_decompose_and_compile(
     decomposer_config: DecomposerConfig | None = None,
     refinement_config: SemanticRefinementConfig | None = None,
     refine_semantics: bool = True,
+    completion_provider: CompletionProvider | None = None,
+    completion_config: OcclusionCompletionConfig | None = None,
+    complete_hidden: bool = True,
     qa_config: Any | None = None,
     atlas_config: Any | None = None,
 ) -> SingleImageCompileResultV1:
     image = decode_source_image(payload, decoder=decoder)
     return decompose_and_compile(
-        character_id,
-        image,
-        backend,
+        character_id, image, backend,
         decomposer_config=decomposer_config,
         refinement_config=refinement_config,
         refine_semantics=refine_semantics,
+        completion_provider=completion_provider,
+        completion_config=completion_config,
+        complete_hidden=complete_hidden,
         qa_config=qa_config,
         atlas_config=atlas_config,
     )
