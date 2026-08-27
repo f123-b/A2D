@@ -15,6 +15,8 @@ P3-R3 semantic refinement
         ↓
 P3-R4 occlusion completion
         ↓
+P3-R5 landmark fusion
+        ↓
 P3→P2 bridge
         ↓
 compile_avatar()
@@ -46,28 +48,46 @@ Normalization guarantees canonical semantic aliases, active-alpha tight crops, n
 
 ## P3-R4 — occlusion completion
 
-`CompletionProvider` is the model-independent inpainting boundary. A provider receives:
+`CompletionProvider` is the model-independent inpainting boundary. Providers receive the source image, target layer, visible pixels and an explicit completion mask. Pixels outside that mask must remain byte-identical.
 
-- full source image
-- target semantic + normalized bbox
-- visible RGBA/A8
-- an explicit completion mask
+Current completion targets are face holes covered by front/side hair and body holes covered by cloth. The P3-R3 body proxy is explicitly marked for full local completion.
 
-It returns completed RGBA plus confidence.
+`DeterministicReferenceCompletionProvider` is a correctness oracle, not a production visual inpainting model.
 
-The completion gate enforces a strict invariant: **pixels outside the completion mask must remain byte-identical**. A provider that changes known visible pixels is rejected before Phase 2.
+## P3-R5 — landmark fusion
 
-Current target masks:
+`LandmarkProvider` is the production landmark-model boundary. It emits normalized candidates with confidence; P3-R5 fuses those candidates with:
+
+1. already-normalized backend landmarks;
+2. deterministic geometry evidence from the semantic layers;
+3. alpha-weighted centroids for facial parts;
+4. alpha top-band centroids for hair roots.
+
+Canonical output includes, when source semantics permit:
 
 ```text
-face ← hair_front / hair_side_l / hair_side_r overlap with face alpha holes
-body ← cloth overlap with body alpha holes
-body proxy from P3-R3 ← full target requires completion
+head_center
+nose
+neck
+eye_l_center / eye_r_center
+iris_l_center / iris_r_center
+mouth_center
+brow_l_center / brow_r_center
+hair_front_root
+hair_side_l_root / hair_side_r_root
+hair_back_root
 ```
 
-No provider is required for structural compilation. When hidden pixels are detected without a provider, P3 emits `completion-provider-missing` as a warning and preserves the refined input. A supplied provider with invalid dimensions, invalid confidence or visible-pixel mutation produces a blocking error.
+Fusion policy:
 
-`DeterministicReferenceCompletionProvider` is a dependency-free correctness oracle. It uses deterministic nearest-visible-pixel propagation and intentionally reports low confidence; it is **not** a production visual inpainting model.
+- existing landmark confidence `>= 0.90`: preserve exact coordinates/confidence
+- agreeing evidence: confidence-weighted position fusion
+- conflicting evidence: select the strongest source, reduce confidence, emit `landmark-disagreement`
+- geometry-only weak estimates remain explicitly low confidence
+- provider exceptions/invalid duplicate canonical landmarks are blocking
+- unsupported provider landmark labels are informational, not silently remapped
+
+P3-R5 deliberately derives `nose` and `neck` conservatively when no model provides them. Geometry fallback is sufficient for P2 pivots/Proxy-Z but remains lower confidence for the later quality gate.
 
 ### One-click bridge
 
@@ -77,6 +97,7 @@ result = decode_decompose_and_compile(
     encoded_png_or_jpg,
     see_through_backend,
     completion_provider=my_inpainting_provider,
+    landmark_provider=my_landmark_provider,
 )
 
 if result.compiler and result.compiler.qa.ready:
@@ -86,10 +107,16 @@ if result.compiler and result.compiler.qa.ready:
 The default ordering is:
 
 ```text
-decompose → normalize → refine → complete → P2 compile
+decompose → normalize → refine → complete → fuse landmarks → P2 compile
 ```
 
-Debugging can disable refinement or completion independently with `refine_semantics=False` or `complete_hidden=False`.
+Debugging can independently disable refinement, completion or landmark fusion with:
+
+```text
+refine_semantics=False
+complete_hidden=False
+fuse_landmarks_enabled=False
+```
 
 ## Tests
 
@@ -100,9 +127,9 @@ python -m unittest discover -s services/decomposer/tests -v
 
 ## Next
 
-P3-R5 Landmark Fusion:
-- face/eye/iris/mouth/brow landmark providers
-- geometry-derived hair roots
-- provider confidence fusion
-- pair consistency and fallback hierarchy
-- canonical normalized landmark output for P2
+P3-R6 Quality Scoring:
+- decompose/refinement/completion/landmark evidence aggregation
+- stage scores
+- release thresholds
+- retry/manual-review recommendations
+- stable quality report for Studio UI
