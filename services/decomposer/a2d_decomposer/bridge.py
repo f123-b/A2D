@@ -8,6 +8,11 @@ from .contract import DecomposerResultV1, SourceImageRgba
 from .landmark_fusion import LandmarkFusionConfig, LandmarkProvider, fuse_landmarks
 from .pipeline import DecomposerConfig, decompose_image
 from .production import EncodedImageDecoder, decode_source_image
+from .quality import (
+    CharacterQualityReportV1,
+    QualityScoringConfig,
+    score_character_quality,
+)
 from .refinement import SemanticRefinementConfig, refine_decomposer_result
 
 
@@ -22,6 +27,7 @@ class RigCompilerBridgeInputV1:
 class SingleImageCompileResultV1:
     decomposer: DecomposerResultV1
     compiler: Any | None
+    quality: CharacterQualityReportV1 | None = None
 
 
 def to_rig_compiler_inputs(result: DecomposerResultV1) -> RigCompilerBridgeInputV1:
@@ -59,12 +65,30 @@ def to_rig_compiler_inputs(result: DecomposerResultV1) -> RigCompilerBridgeInput
         masks[record.id] = AlphaMask.from_u8(asset.width, asset.height, asset.alpha)
         images[record.id] = RgbaImage(asset.width, asset.height, asset.rgba)
 
-    landmarks = tuple(Landmark(item.id, item.x, item.y, item.confidence) for item in result.landmarks)
+    landmarks = tuple(
+        Landmark(item.id, item.x, item.y, item.confidence)
+        for item in result.landmarks
+    )
     value = NormalizedRigInput(
-        result.character_id, result.canvas_width, result.canvas_height,
-        tuple(layers), landmarks, result.source_revision,
+        result.character_id,
+        result.canvas_width,
+        result.canvas_height,
+        tuple(layers),
+        landmarks,
+        result.source_revision,
     )
     return RigCompilerBridgeInputV1(value, masks, images)
+
+
+def _quality(
+    decomposed: DecomposerResultV1,
+    compiler: Any | None,
+    enabled: bool,
+    config: QualityScoringConfig | None,
+) -> CharacterQualityReportV1 | None:
+    if not enabled:
+        return None
+    return score_character_quality(decomposed, compiler, config=config)
 
 
 def decompose_and_compile(
@@ -81,13 +105,19 @@ def decompose_and_compile(
     landmark_provider: LandmarkProvider | None = None,
     landmark_config: LandmarkFusionConfig | None = None,
     fuse_landmarks_enabled: bool = True,
+    quality_config: QualityScoringConfig | None = None,
+    quality_scoring_enabled: bool = True,
     qa_config: Any | None = None,
     atlas_config: Any | None = None,
 ) -> SingleImageCompileResultV1:
-    """Run P3 normalize/refine/complete/fuse-landmarks then P2 compilation."""
-    decomposed = decompose_image(character_id, image, backend, config=decomposer_config)
+    """Run P3 normalize/refine/complete/fuse/score around P2 compilation."""
+    decomposed = decompose_image(
+        character_id, image, backend, config=decomposer_config
+    )
     if decomposed.ready and refine_semantics:
-        decomposed = refine_decomposer_result(decomposed, image, config=refinement_config)
+        decomposed = refine_decomposer_result(
+            decomposed, image, config=refinement_config
+        )
     if decomposed.ready and complete_hidden:
         decomposed = complete_occlusions(
             decomposed, image, completion_provider, config=completion_config,
@@ -97,14 +127,26 @@ def decompose_and_compile(
             decomposed, image, landmark_provider, config=landmark_config,
         )
     if not decomposed.ready:
-        return SingleImageCompileResultV1(decomposed, None)
+        return SingleImageCompileResultV1(
+            decomposed,
+            None,
+            _quality(decomposed, None, quality_scoring_enabled, quality_config),
+        )
+
     bridged = to_rig_compiler_inputs(decomposed)
     from a2d_rig_compiler import compile_avatar
     compiled = compile_avatar(
-        bridged.value, bridged.masks, bridged.images,
-        qa_config=qa_config, atlas_config=atlas_config,
+        bridged.value,
+        bridged.masks,
+        bridged.images,
+        qa_config=qa_config,
+        atlas_config=atlas_config,
     )
-    return SingleImageCompileResultV1(decomposed, compiled)
+    return SingleImageCompileResultV1(
+        decomposed,
+        compiled,
+        _quality(decomposed, compiled, quality_scoring_enabled, quality_config),
+    )
 
 
 def decode_decompose_and_compile(
@@ -122,12 +164,16 @@ def decode_decompose_and_compile(
     landmark_provider: LandmarkProvider | None = None,
     landmark_config: LandmarkFusionConfig | None = None,
     fuse_landmarks_enabled: bool = True,
+    quality_config: QualityScoringConfig | None = None,
+    quality_scoring_enabled: bool = True,
     qa_config: Any | None = None,
     atlas_config: Any | None = None,
 ) -> SingleImageCompileResultV1:
     image = decode_source_image(payload, decoder=decoder)
     return decompose_and_compile(
-        character_id, image, backend,
+        character_id,
+        image,
+        backend,
         decomposer_config=decomposer_config,
         refinement_config=refinement_config,
         refine_semantics=refine_semantics,
@@ -137,6 +183,8 @@ def decode_decompose_and_compile(
         landmark_provider=landmark_provider,
         landmark_config=landmark_config,
         fuse_landmarks_enabled=fuse_landmarks_enabled,
+        quality_config=quality_config,
+        quality_scoring_enabled=quality_scoring_enabled,
         qa_config=qa_config,
         atlas_config=atlas_config,
     )

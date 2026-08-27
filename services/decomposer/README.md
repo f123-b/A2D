@@ -17,11 +17,13 @@ P3-R4 occlusion completion
         ↓
 P3-R5 landmark fusion
         ↓
-P3→P2 bridge
+P2 compile_avatar()
         ↓
-compile_avatar()
+P3-R6 quality scoring
         ↓
-.a2d
+PASS / RETRY / MANUAL_REVIEW / BLOCK
+        ↓
+.a2d preview / auto export gate
 ```
 
 ## P3-R1 — model-independent normalization
@@ -56,38 +58,53 @@ Current completion targets are face holes covered by front/side hair and body ho
 
 ## P3-R5 — landmark fusion
 
-`LandmarkProvider` is the production landmark-model boundary. It emits normalized candidates with confidence; P3-R5 fuses those candidates with:
+`LandmarkProvider` is the production landmark-model boundary. P3-R5 combines direct backend landmarks, provider candidates and deterministic semantic-layer geometry.
 
-1. already-normalized backend landmarks;
-2. deterministic geometry evidence from the semantic layers;
-3. alpha-weighted centroids for facial parts;
-4. alpha top-band centroids for hair roots.
+Canonical output includes head/nose/neck, eye/iris/mouth/brow centers and hair roots. High-confidence existing landmarks are preserved exactly, agreeing evidence is confidence-weighted, and disagreeing evidence selects the strongest source with an explicit confidence penalty.
 
-Canonical output includes, when source semantics permit:
+## P3-R6 — quality scoring
+
+`score_character_quality()` produces a stable `CharacterQualityReportV1` after P2 compilation.
+
+The score is the weighted combination of six independent dimensions:
 
 ```text
-head_center
-nose
-neck
-eye_l_center / eye_r_center
-iris_l_center / iris_r_center
-mouth_center
-brow_l_center / brow_r_center
-hair_front_root
-hair_side_l_root / hair_side_r_root
-hair_back_root
+semantic     25
+completion   20
+landmark     20
+consistency  10
+synthetic    10
+compiler     15
+             ---
+             100
 ```
 
-Fusion policy:
+The default decision policy is:
 
-- existing landmark confidence `>= 0.90`: preserve exact coordinates/confidence
-- agreeing evidence: confidence-weighted position fusion
-- conflicting evidence: select the strongest source, reduce confidence, emit `landmark-disagreement`
-- geometry-only weak estimates remain explicitly low confidence
-- provider exceptions/invalid duplicate canonical landmarks are blocking
-- unsupported provider landmark labels are informational, not silently remapped
+```text
+P3/P2 hard error                    → BLOCK
+retryable model/provider issue      → RETRY
+manual semantic/landmark review     → MANUAL_REVIEW
+score >= 85 with no review action   → PASS
+70 <= score < 85                    → MANUAL_REVIEW
+score < 70                          → RETRY
+```
 
-P3-R5 deliberately derives `nose` and `neck` conservatively when no model provides them. Geometry fallback is sufficient for P2 pivots/Proxy-Z but remains lower confidence for the later quality gate.
+`PASS` is the only decision with `readyForExport=true`. `RETRY` and `MANUAL_REVIEW` do **not** discard a valid P2 `.a2d`; the artifact remains available for Studio preview, inspection and repair.
+
+Actions are machine-readable, for example:
+
+```text
+run_completion
+run_landmark_provider
+rerun_decomposition
+review_semantics
+review_landmarks
+review_compiler
+fix_compiler
+```
+
+The JSON contract is frozen in `spec/character-quality-report.schema.json`.
 
 ### One-click bridge
 
@@ -100,22 +117,31 @@ result = decode_decompose_and_compile(
     landmark_provider=my_landmark_provider,
 )
 
-if result.compiler and result.compiler.qa.ready:
+if result.quality and result.quality.ready_for_export:
     a2d_bytes = result.compiler.artifact.a2d
+elif result.compiler and result.compiler.artifact:
+    preview_bytes = result.compiler.artifact.a2d
 ```
 
 The default ordering is:
 
 ```text
-decompose → normalize → refine → complete → fuse landmarks → P2 compile
+decompose
+→ normalize
+→ refine
+→ complete
+→ fuse landmarks
+→ P2 compile
+→ quality score
 ```
 
-Debugging can independently disable refinement, completion or landmark fusion with:
+Debugging can independently disable refinement, completion, landmark fusion or quality scoring with:
 
 ```text
 refine_semantics=False
 complete_hidden=False
 fuse_landmarks_enabled=False
+quality_scoring_enabled=False
 ```
 
 ## Tests
@@ -127,9 +153,10 @@ python -m unittest discover -s services/decomposer/tests -v
 
 ## Next
 
-P3-R6 Quality Scoring:
-- decompose/refinement/completion/landmark evidence aggregation
-- stage scores
-- release thresholds
-- retry/manual-review recommendations
-- stable quality report for Studio UI
+P3-R7 Real Single-image E2E:
+- real See-through V3 weights + CUDA
+- production completion provider
+- production landmark provider
+- real character image corpus
+- quality gate regression thresholds
+- generated `.a2d` visual/runtime validation
