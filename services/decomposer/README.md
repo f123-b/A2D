@@ -13,6 +13,8 @@ BackendDecompositionV1
         ↓
 P3-R1 normalization
         ↓
+P3-R3 semantic refinement
+        ↓
 Normalized layers + RGBA/A8 assets
         ↓
 P3→P2 bridge
@@ -39,33 +41,36 @@ Normalization guarantees:
 
 ## P3-R2 — production adapter
 
-`SeeThroughProcessBackend` integrates the public See-through V3 command-line pipeline without parsing PSD files:
+`SeeThroughProcessBackend` invokes the public See-through V3 command line and consumes its non-PSD `optimized/info.json + <tag>.png` output. Model weights, PyTorch and CUDA remain in an externally pinned See-through runtime.
 
-```text
-SourceImageRgba
-  → dependency-free temporary PNG
-  → inference/scripts/inference_psd.py
-  → optimized/info.json + <tag>.png
-  → remove square-padding transform
-  → source-pixel BackendLayerObservationV1
-  → P3-R1 normalizer
-```
-
-The adapter deliberately uses the upstream non-PSD output because `further_extr()` already writes cropped PNG parts and `optimized/info.json` with `xyxy`, `depth_median`, tags and frame size.
-
-Production image decode/read/resize is supplied by `PillowImageCodec`; Pillow is lazy and optional:
+Production image decode/read/resize is supplied by the lazy optional `PillowImageCodec`:
 
 ```bash
 pip install -e 'services/decomposer[production]'
 ```
 
-See-through itself remains an externally pinned runtime environment; A2D does not vendor PyTorch/CUDA/model weights into the core package.
+## P3-R3 — semantic refinement
+
+`refine_decomposer_result()` converts structurally valid model output into the semantic shape required by the Phase-2 release gate.
+
+Rules are intentionally conservative:
+
+- missing `body` may be synthesized only from a real `cloth` matte; the proxy is placed behind cloth and receives a confidence penalty
+- if exactly one eye-white, iris or brow side is missing, the existing side can be mirrored around the face center with an explicit confidence penalty
+- side hair is extracted only from real front/back hair pixels outside the face core; no synthetic paint/inpainting is performed here
+- paired facial geometry/confidence mismatches generate warnings
+- core visual z-order conflicts are repaired deterministically and reported
+- canonical parent hints are emitted for body/face/eyes/iris/mouth/hair
+- every synthesized layer produces an explicit finding
+- any required semantic that still cannot be obtained is a blocking `required-semantic-missing` finding
+
+P3-R3 is not occlusion completion. It never hallucinates covered anatomy; that remains P3-R4.
 
 ### P3→P2 bridge
 
-```python
-from a2d_decomposer import decode_decompose_and_compile
+The one-click entrypoint refines by default before entering Phase 2:
 
+```python
 result = decode_decompose_and_compile(
     "character-id",
     encoded_png_or_jpg,
@@ -76,11 +81,7 @@ if result.compiler and result.compiler.qa.ready:
     a2d_bytes = result.compiler.artifact.a2d
 ```
 
-`to_rig_compiler_inputs()` converts normalized assets directly into the existing Phase-2 `NormalizedRigInput`, `AlphaMask`, and `RgbaImage` ABI.
-
-### Current semantic boundary
-
-P3-R2 only maps semantics the upstream model actually resolves reliably. It does **not** fabricate missing `body` or side-hair layers from clothing. A See-through result can therefore be structurally valid at P3 while P2 correctly rejects it for missing required semantics. P3-R3 owns semantic refinement/synthesis.
+For debugging, semantic refinement can be disabled with `refine_semantics=False`.
 
 ## Tests
 
@@ -91,10 +92,9 @@ python -m unittest discover -s services/decomposer/tests -v
 
 ## Next
 
-P3-R3 Semantic Refinement:
-- body matte synthesis from compatible upstream parts
-- hair front/back → front/side/back classification/refinement
-- paired eye/brow consistency
-- accessory/clothing conflict resolution
-- confidence propagation
-- required-semantic completion gate
+P3-R4 Occlusion Completion:
+- recover covered face/body/hair pixels
+- preserve visible pixels exactly
+- deterministic completion masks
+- model/provider adapter boundary
+- completion confidence and QA

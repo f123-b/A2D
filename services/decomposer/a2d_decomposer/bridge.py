@@ -6,6 +6,7 @@ from typing import Any, Mapping
 from .contract import DecomposerResultV1, SourceImageRgba
 from .pipeline import DecomposerConfig, decompose_image
 from .production import EncodedImageDecoder, decode_source_image
+from .refinement import SemanticRefinementConfig, refine_decomposer_result
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,16 +90,24 @@ def decompose_and_compile(
     backend: Any,
     *,
     decomposer_config: DecomposerConfig | None = None,
+    refinement_config: SemanticRefinementConfig | None = None,
+    refine_semantics: bool = True,
     qa_config: Any | None = None,
     atlas_config: Any | None = None,
 ) -> SingleImageCompileResultV1:
-    """Run P3 normalization then P2 one-click compilation."""
+    """Run P3 normalization/refinement then P2 one-click compilation."""
     decomposed = decompose_image(
         character_id,
         image,
         backend,
         config=decomposer_config,
     )
+    if decomposed.ready and refine_semantics:
+        decomposed = refine_decomposer_result(
+            decomposed,
+            image,
+            config=refinement_config,
+        )
     if not decomposed.ready:
         return SingleImageCompileResultV1(decomposed, None)
     bridged = to_rig_compiler_inputs(decomposed)
@@ -120,6 +129,8 @@ def decode_decompose_and_compile(
     *,
     decoder: EncodedImageDecoder | None = None,
     decomposer_config: DecomposerConfig | None = None,
+    refinement_config: SemanticRefinementConfig | None = None,
+    refine_semantics: bool = True,
     qa_config: Any | None = None,
     atlas_config: Any | None = None,
 ) -> SingleImageCompileResultV1:
@@ -129,6 +140,8 @@ def decode_decompose_and_compile(
         image,
         backend,
         decomposer_config=decomposer_config,
+        refinement_config=refinement_config,
+        refine_semantics=refine_semantics,
         qa_config=qa_config,
         atlas_config=atlas_config,
     )
