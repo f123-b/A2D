@@ -127,3 +127,19 @@ Phase-1 SpringChainPhysics-compatible IR
 ```
 
 Runtime v1 initializes chains vertically. P2-R6 therefore reports non-vertical root-to-tip geometry as an explicit QA warning instead of inventing an unsupported chain-orientation field.
+
+## P2-R7 — Cross-stage QA
+
+P2-R7 is the single compiler release gate. It aggregates stage-local findings and verifies cross-stage ABI invariants:
+
+```text
+RigPlan + Meshes + SemanticRig + Proxy-Z + Morph + Physics
+                         ↓
+                  CompileQaReportV1
+                         ↓
+              ready / score / findings
+```
+
+`ready` is strict: any `error` blocks P2-R8 packaging. Warnings reduce the quality score but remain non-blocking. The report is deterministic and JSON-ready via `CompileQaReportV1.to_dict()`.
+
+Current hard checks include mesh/UV/index consistency, Proxy-Z vertex count/range, morph range contiguity and the 8-influence Runtime gate, physics-chain completeness, parameter references and cross-stage character identity.

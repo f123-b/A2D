@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://a2d.local/spec/compile-qa-report.schema.json",
+  "title": "A2D Compile QA Report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "characterId", "ready", "score", "errors", "warnings", "infos", "findings", "stages"],
+  "properties": {
+    "version": { "const": 1 },
+    "characterId": { "type": "string", "minLength": 1 },
+    "ready": { "type": "boolean" },
+    "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "errors": { "type": "integer", "minimum": 0 },
+    "warnings": { "type": "integer", "minimum": 0 },
+    "infos": { "type": "integer", "minimum": 0 },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "stage", "code", "message"],
+        "properties": {
+          "severity": { "enum": ["error", "warning", "info"] },
+          "stage": { "enum": ["contract", "mesh", "semantic_rig", "proxy_z", "morph", "physics", "cross_stage"] },
+          "code": { "type": "string", "minLength": 1 },
+          "message": { "type": "string", "minLength": 1 },
+          "subjectId": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stage", "errors", "warnings", "infos"],
+        "properties": {
+          "stage": { "enum": ["contract", "mesh", "semantic_rig", "proxy_z", "morph", "physics", "cross_stage"] },
+          "errors": { "type": "integer", "minimum": 0 },
+          "warnings": { "type": "integer", "minimum": 0 },
+          "infos": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  }
+}
