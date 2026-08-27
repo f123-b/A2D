@@ -17,6 +17,11 @@ from .proxy_z import (
     DepthFeatureRule, PartDepthBiasRule, ProxyZConfig, ProxyZHeadPlanV1,
     Pseudo3DHeadDataV1, compile_proxy_z_head, pack_proxy_z_buffer, project_proxy_z_reference,
 )
+from .facial_morph import (
+    MORPH_INFLUENCE_STRIDE_BYTES, MORPH_RANGE_STRIDE_BYTES,
+    CompiledMorphPlanV1, MorphCompileConfig, MorphInfluenceRecord, MorphVertexRange, PackedMorphBuffers,
+    compile_morph_plan, compile_semantic_morphs, pack_morph_buffers, pack_morph_influences, pack_morph_ranges,
+)
 
 __all__ = [
     "compile_rig_plan","Semantic","SemanticLayer","NormalizedRect","Landmark","NormalizedRigInput",
@@ -27,4 +32,7 @@ __all__ = [
     "DeformerKind","DeformerRule","MorphIntent","ParameterBindingRule","Pivot2","SemanticRigPlanV1","compile_semantic_rig",
     "DepthFeatureRule","PartDepthBiasRule","ProxyZConfig","ProxyZHeadPlanV1","Pseudo3DHeadDataV1",
     "compile_proxy_z_head","pack_proxy_z_buffer","project_proxy_z_reference",
+    "MORPH_INFLUENCE_STRIDE_BYTES","MORPH_RANGE_STRIDE_BYTES",
+    "CompiledMorphPlanV1","MorphCompileConfig","MorphInfluenceRecord","MorphVertexRange","PackedMorphBuffers",
+    "compile_morph_plan","compile_semantic_morphs","pack_morph_buffers","pack_morph_influences","pack_morph_ranges",
 ]

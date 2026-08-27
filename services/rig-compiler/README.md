@@ -83,3 +83,27 @@ morph intents
 ```
 
 It deliberately does not create proxy-Z values or vertex morph deltas; those are P2-R4/P2-R5 responsibilities.
+
+## P2-R4 — Proxy-Z head
+
+P2-R4 compiles the face mesh into a neutral-preserving pseudo-depth profile compatible with the existing Phase-1 `pseudo3d_head` Runtime path.
+
+It emits per-vertex `proxyZ`, `Pseudo3DHeadDataV1`, semantic face-depth features and whole-head part depth metadata.
+
+## P2-R5 — Facial morph compiler
+
+P2-R5 resolves semantic `MorphIntent` rules against actual mesh vertices:
+
+```text
+MorphIntent + AdaptiveMesh + semantic pivot
+              ↓
+      bounded vertex deltas
+              ↓
+      spatial falloff weights
+              ↓
+u32 parameterIndex + f32 dx + f32 dy + f32 weight
+              ↓
+       uvec2 vertex ranges
+```
+
+The emitted binary layout is the existing Phase-1 Runtime ABI. No renderer-specific conversion layer is required.
