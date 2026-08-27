@@ -4,14 +4,14 @@ from .contract import (
     ExpressionBinding, ExpressionRule, Landmark, NormalizedRect, NormalizedRigInput, PhysicsRule, PlannedPart,
     QaFinding, RigPlanV1, Semantic, SemanticLayer,
 )
-
 from .semantic_rig import (
     DeformerKind, DeformerRule, MorphIntent, ParameterBindingRule, Pivot2,
     SemanticRigPlanV1, compile_semantic_rig,
 )
 from .adaptive_mesh import (
     AdaptiveMesh, AlphaMask, MeshConfig, MeshFinding, MeshGenerationError, MeshQuality,
-    PackedMeshBuffers, Point2, Triangle, assert_mesh_quality, default_mesh_config, generate_adaptive_mesh, generate_layer_mesh, pack_mesh_buffers,
+    PackedMeshBuffers, Point2, Triangle, assert_mesh_quality, default_mesh_config,
+    generate_adaptive_mesh, generate_layer_mesh, pack_mesh_buffers,
 )
 from .proxy_z import (
     DepthFeatureRule, PartDepthBiasRule, ProxyZConfig, ProxyZHeadPlanV1,
@@ -20,7 +20,8 @@ from .proxy_z import (
 from .facial_morph import (
     MORPH_INFLUENCE_STRIDE_BYTES, MORPH_RANGE_STRIDE_BYTES,
     CompiledMorphPlanV1, MorphCompileConfig, MorphInfluenceRecord, MorphVertexRange, PackedMorphBuffers,
-    compile_morph_plan, compile_semantic_morphs, pack_morph_buffers, pack_morph_influences, pack_morph_ranges,
+    compile_morph_plan, compile_semantic_morphs, pack_morph_buffers,
+    pack_morph_influences, pack_morph_ranges,
 )
 from .auto_physics import (
     AutoPhysicsChainPlanV1, AutoPhysicsPlanV1, PhysicsCompileConfig,
@@ -31,13 +32,18 @@ from .qa import (
     CompileQaConfig, CompileQaFindingV1, CompileQaReportV1, QaStage, StageQaSummaryV1,
     compile_qa_report,
 )
+from .one_click import (
+    AtlasConfig, AtlasPlacementV1, CompiledAtlasV1, CompiledAvatarArtifactV1,
+    OneClickCompileResultV1, RgbaImage, build_texture_atlas, compile_avatar,
+)
 
 __all__ = [
     "compile_rig_plan","Semantic","SemanticLayer","NormalizedRect","Landmark","NormalizedRigInput",
     "PlannedPart","PhysicsRule","ExpressionBinding","ExpressionRule","QaFinding","RigPlanV1",
     "STANDARD_PARAMETER_IDS","R8B_PARAMETER_IDS","REQUIRED_STANDARD_SEMANTICS","HAIR_PARAMETER_BY_SEMANTIC",
     "AdaptiveMesh","AlphaMask","MeshConfig","MeshFinding","MeshGenerationError","MeshQuality",
-    "PackedMeshBuffers","Point2","Triangle","assert_mesh_quality","default_mesh_config","generate_adaptive_mesh","generate_layer_mesh","pack_mesh_buffers",
+    "PackedMeshBuffers","Point2","Triangle","assert_mesh_quality","default_mesh_config",
+    "generate_adaptive_mesh","generate_layer_mesh","pack_mesh_buffers",
     "DeformerKind","DeformerRule","MorphIntent","ParameterBindingRule","Pivot2","SemanticRigPlanV1","compile_semantic_rig",
     "DepthFeatureRule","PartDepthBiasRule","ProxyZConfig","ProxyZHeadPlanV1","Pseudo3DHeadDataV1",
     "compile_proxy_z_head","pack_proxy_z_buffer","project_proxy_z_reference",
@@ -47,6 +53,7 @@ __all__ = [
     "AutoPhysicsChainPlanV1","AutoPhysicsPlanV1","PhysicsCompileConfig",
     "PhysicsInputBindingV1","PhysicsOutputBindingV1","RuntimeSpringChainV1",
     "compile_auto_physics","compile_physics_chain",
-    "CompileQaConfig","CompileQaFindingV1","CompileQaReportV1","QaStage","StageQaSummaryV1",
-    "compile_qa_report",
+    "CompileQaConfig","CompileQaFindingV1","CompileQaReportV1","QaStage","StageQaSummaryV1","compile_qa_report",
+    "AtlasConfig","AtlasPlacementV1","CompiledAtlasV1","CompiledAvatarArtifactV1",
+    "OneClickCompileResultV1","RgbaImage","build_texture_atlas","compile_avatar",
 ]

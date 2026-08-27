@@ -8,12 +8,17 @@ ZIP-compatible package.
 - `model.json`
 - `buffers/geometry.bin`
 
+## Optional standard files
+- `qa/report.json` — compiler QA report conforming to `compile-qa-report.schema.json`
+- texture assets referenced by `model.json`
+
 ## Rules
 - Binary numeric representation is little-endian.
 - Buffer views are 4-byte aligned.
 - Large numerical arrays MUST NOT be stored as JSON arrays.
 - Texture files should be atlas-packed.
 - Unknown optional files must be ignored by readers.
+- Compiler-produced packages should use deterministic file ordering and stable serialization when practical.
 
 ## Manifest minimum
 ```json
