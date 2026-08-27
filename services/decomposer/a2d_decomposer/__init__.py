@@ -14,6 +14,7 @@ from .production import (
     SEE_THROUGH_V3_REFERENCE_REVISION, SeeThroughConfig, SeeThroughProcessBackend,
     SubprocessRunner, decode_source_image, encode_rgba_png,
 )
+from .refinement import SemanticRefinementConfig, refine_decomposer_result
 from .bridge import (
     RigCompilerBridgeInputV1, SingleImageCompileResultV1,
     decode_decompose_and_compile, decompose_and_compile, to_rig_compiler_inputs,
@@ -30,6 +31,7 @@ __all__ = [
     "ProductionAdapterError", "RgbaRasterCodec", "SEE_THROUGH_SCRIPT",
     "SEE_THROUGH_V3_REFERENCE_REVISION", "SeeThroughConfig", "SeeThroughProcessBackend",
     "SubprocessRunner", "decode_source_image", "encode_rgba_png",
+    "SemanticRefinementConfig", "refine_decomposer_result",
     "RigCompilerBridgeInputV1", "SingleImageCompileResultV1",
     "decode_decompose_and_compile", "decompose_and_compile", "to_rig_compiler_inputs",
 ]
