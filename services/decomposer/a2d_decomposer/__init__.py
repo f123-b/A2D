@@ -15,6 +15,11 @@ from .production import (
     SubprocessRunner, decode_source_image, encode_rgba_png,
 )
 from .refinement import SemanticRefinementConfig, refine_decomposer_result
+from .completion import (
+    CompletionProvider, CompletionRequestV1, CompletionResponseV1,
+    DeterministicReferenceCompletionProvider, OcclusionCompletionConfig,
+    complete_occlusions,
+)
 from .bridge import (
     RigCompilerBridgeInputV1, SingleImageCompileResultV1,
     decode_decompose_and_compile, decompose_and_compile, to_rig_compiler_inputs,
@@ -32,6 +37,9 @@ __all__ = [
     "SEE_THROUGH_V3_REFERENCE_REVISION", "SeeThroughConfig", "SeeThroughProcessBackend",
     "SubprocessRunner", "decode_source_image", "encode_rgba_png",
     "SemanticRefinementConfig", "refine_decomposer_result",
+    "CompletionProvider", "CompletionRequestV1", "CompletionResponseV1",
+    "DeterministicReferenceCompletionProvider", "OcclusionCompletionConfig",
+    "complete_occlusions",
     "RigCompilerBridgeInputV1", "SingleImageCompileResultV1",
     "decode_decompose_and_compile", "decompose_and_compile", "to_rig_compiler_inputs",
 ]
