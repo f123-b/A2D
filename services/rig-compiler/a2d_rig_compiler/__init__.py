@@ -13,6 +13,11 @@ from .adaptive_mesh import (
     AdaptiveMesh, AlphaMask, MeshConfig, MeshFinding, MeshGenerationError, MeshQuality,
     PackedMeshBuffers, Point2, Triangle, assert_mesh_quality, default_mesh_config, generate_adaptive_mesh, generate_layer_mesh, pack_mesh_buffers,
 )
+from .proxy_z import (
+    DepthFeatureRule, PartDepthBiasRule, ProxyZConfig, ProxyZHeadPlanV1,
+    Pseudo3DHeadDataV1, compile_proxy_z_head, pack_proxy_z_buffer, project_proxy_z_reference,
+)
+
 __all__ = [
     "compile_rig_plan","Semantic","SemanticLayer","NormalizedRect","Landmark","NormalizedRigInput",
     "PlannedPart","PhysicsRule","ExpressionBinding","ExpressionRule","QaFinding","RigPlanV1",
@@ -20,4 +25,6 @@ __all__ = [
     "AdaptiveMesh","AlphaMask","MeshConfig","MeshFinding","MeshGenerationError","MeshQuality",
     "PackedMeshBuffers","Point2","Triangle","assert_mesh_quality","default_mesh_config","generate_adaptive_mesh","generate_layer_mesh","pack_mesh_buffers",
     "DeformerKind","DeformerRule","MorphIntent","ParameterBindingRule","Pivot2","SemanticRigPlanV1","compile_semantic_rig",
+    "DepthFeatureRule","PartDepthBiasRule","ProxyZConfig","ProxyZHeadPlanV1","Pseudo3DHeadDataV1",
+    "compile_proxy_z_head","pack_proxy_z_buffer","project_proxy_z_reference",
 ]
