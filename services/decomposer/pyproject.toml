@@ -1,8 +1,11 @@
 [project]
 name = "a2d-decomposer"
-version = "0.1.0"
+version = "0.2.0"
 requires-python = ">=3.11"
 dependencies = []
+
+[project.optional-dependencies]
+production = ["Pillow>=10.4"]
 
 [tool.setuptools]
 packages = ["a2d_decomposer"]
