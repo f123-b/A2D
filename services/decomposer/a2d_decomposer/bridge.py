@@ -5,6 +5,7 @@ from typing import Any, Mapping
 
 from .completion import CompletionProvider, OcclusionCompletionConfig, complete_occlusions
 from .contract import DecomposerResultV1, SourceImageRgba
+from .landmark_fusion import LandmarkFusionConfig, LandmarkProvider, fuse_landmarks
 from .pipeline import DecomposerConfig, decompose_image
 from .production import EncodedImageDecoder, decode_source_image
 from .refinement import SemanticRefinementConfig, refine_decomposer_result
@@ -77,16 +78,23 @@ def decompose_and_compile(
     completion_provider: CompletionProvider | None = None,
     completion_config: OcclusionCompletionConfig | None = None,
     complete_hidden: bool = True,
+    landmark_provider: LandmarkProvider | None = None,
+    landmark_config: LandmarkFusionConfig | None = None,
+    fuse_landmarks_enabled: bool = True,
     qa_config: Any | None = None,
     atlas_config: Any | None = None,
 ) -> SingleImageCompileResultV1:
-    """Run P3 normalize/refine/complete then P2 one-click compilation."""
+    """Run P3 normalize/refine/complete/fuse-landmarks then P2 compilation."""
     decomposed = decompose_image(character_id, image, backend, config=decomposer_config)
     if decomposed.ready and refine_semantics:
         decomposed = refine_decomposer_result(decomposed, image, config=refinement_config)
     if decomposed.ready and complete_hidden:
         decomposed = complete_occlusions(
             decomposed, image, completion_provider, config=completion_config,
+        )
+    if decomposed.ready and fuse_landmarks_enabled:
+        decomposed = fuse_landmarks(
+            decomposed, image, landmark_provider, config=landmark_config,
         )
     if not decomposed.ready:
         return SingleImageCompileResultV1(decomposed, None)
@@ -111,6 +119,9 @@ def decode_decompose_and_compile(
     completion_provider: CompletionProvider | None = None,
     completion_config: OcclusionCompletionConfig | None = None,
     complete_hidden: bool = True,
+    landmark_provider: LandmarkProvider | None = None,
+    landmark_config: LandmarkFusionConfig | None = None,
+    fuse_landmarks_enabled: bool = True,
     qa_config: Any | None = None,
     atlas_config: Any | None = None,
 ) -> SingleImageCompileResultV1:
@@ -123,6 +134,9 @@ def decode_decompose_and_compile(
         completion_provider=completion_provider,
         completion_config=completion_config,
         complete_hidden=complete_hidden,
+        landmark_provider=landmark_provider,
+        landmark_config=landmark_config,
+        fuse_landmarks_enabled=fuse_landmarks_enabled,
         qa_config=qa_config,
         atlas_config=atlas_config,
     )

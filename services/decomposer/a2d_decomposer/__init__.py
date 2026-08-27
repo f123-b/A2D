@@ -20,6 +20,10 @@ from .completion import (
     DeterministicReferenceCompletionProvider, OcclusionCompletionConfig,
     complete_occlusions,
 )
+from .landmark_fusion import (
+    LandmarkCandidateV1, LandmarkFusionConfig, LandmarkProvider,
+    ScriptedReferenceLandmarkProvider, fuse_landmarks,
+)
 from .bridge import (
     RigCompilerBridgeInputV1, SingleImageCompileResultV1,
     decode_decompose_and_compile, decompose_and_compile, to_rig_compiler_inputs,
@@ -40,6 +44,8 @@ __all__ = [
     "CompletionProvider", "CompletionRequestV1", "CompletionResponseV1",
     "DeterministicReferenceCompletionProvider", "OcclusionCompletionConfig",
     "complete_occlusions",
+    "LandmarkCandidateV1", "LandmarkFusionConfig", "LandmarkProvider",
+    "ScriptedReferenceLandmarkProvider", "fuse_landmarks",
     "RigCompilerBridgeInputV1", "SingleImageCompileResultV1",
     "decode_decompose_and_compile", "decompose_and_compile", "to_rig_compiler_inputs",
 ]
