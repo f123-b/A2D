@@ -107,3 +107,23 @@ u32 parameterIndex + f32 dx + f32 dy + f32 weight
 ```
 
 The emitted binary layout is the existing Phase-1 Runtime ABI. No renderer-specific conversion layer is required.
+
+## P2-R6 — Auto physics compiler
+
+P2-R6 resolves optional hair semantics against their actual mesh geometry and P2-R3 root pivots:
+
+```text
+Hair Semantic + AdaptiveMesh + Semantic Root
+              ↓
+       root-to-tip extent
+              ↓
+      semantic node preset
+              ↓
+ nodeCount + segmentLength
+              ↓
+damping / stiffness / gravity / gain
+              ↓
+Phase-1 SpringChainPhysics-compatible IR
+```
+
+Runtime v1 initializes chains vertically. P2-R6 therefore reports non-vertical root-to-tip geometry as an explicit QA warning instead of inventing an unsupported chain-orientation field.

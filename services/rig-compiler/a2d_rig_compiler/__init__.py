@@ -23,6 +23,12 @@ from .facial_morph import (
     compile_morph_plan, compile_semantic_morphs, pack_morph_buffers, pack_morph_influences, pack_morph_ranges,
 )
 
+from .auto_physics import (
+    AutoPhysicsChainPlanV1, AutoPhysicsPlanV1, PhysicsCompileConfig,
+    PhysicsInputBindingV1, PhysicsOutputBindingV1, RuntimeSpringChainV1,
+    compile_auto_physics, compile_physics_chain,
+)
+
 __all__ = [
     "compile_rig_plan","Semantic","SemanticLayer","NormalizedRect","Landmark","NormalizedRigInput",
     "PlannedPart","PhysicsRule","ExpressionBinding","ExpressionRule","QaFinding","RigPlanV1",
@@ -35,4 +41,7 @@ __all__ = [
     "MORPH_INFLUENCE_STRIDE_BYTES","MORPH_RANGE_STRIDE_BYTES",
     "CompiledMorphPlanV1","MorphCompileConfig","MorphInfluenceRecord","MorphVertexRange","PackedMorphBuffers",
     "compile_morph_plan","compile_semantic_morphs","pack_morph_buffers","pack_morph_influences","pack_morph_ranges",
+    "AutoPhysicsChainPlanV1","AutoPhysicsPlanV1","PhysicsCompileConfig",
+    "PhysicsInputBindingV1","PhysicsOutputBindingV1","RuntimeSpringChainV1",
+    "compile_auto_physics","compile_physics_chain",
 ]
