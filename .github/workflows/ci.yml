@@ -57,4 +57,24 @@ jobs:
           python-version: '3.11'
       - run: python -m compileall -q services/decomposer/a2d_decomposer
       - run: PYTHONPATH=services/decomposer:services/rig-compiler python -m unittest discover -s services/decomposer/tests -v
-      - run: python -c "import json; json.load(open('spec/normalized-layer-package.schema.json', encoding='utf-8')); json.load(open('spec/character-quality-report.schema.json', encoding='utf-8'))"
+      - run: python -c "import json; json.load(open('spec/normalized-layer-package.schema.json', encoding='utf-8')); json.load(open('spec/character-quality-report.schema.json', encoding='utf-8')); json.load(open('spec/single-image-e2e-report.schema.json', encoding='utf-8'))"
+
+  single-image-e2e:
+    name: Single-image E2E
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm build
+      - run: PYTHONPATH=services/decomposer:services/rig-compiler python tools/e2e/reference_single_image.py --output /tmp/a2d-single-image-e2e
+      - run: node tools/e2e/runtime_smoke.mjs /tmp/a2d-single-image-e2e/character.a2d /tmp/a2d-single-image-e2e/runtime-smoke.json
+      - run: PYTHONPATH=services/decomposer:services/rig-compiler python -m a2d_decomposer.e2e_cli finalize --output /tmp/a2d-single-image-e2e
+      - run: python -c "import json; r=json.load(open('/tmp/a2d-single-image-e2e/e2e-report.json')); assert r['mode']=='reference' and r['gate']=='pass' and r['runtime']['passed'] is True"
+      - run: python -c "import json; json.load(open('spec/single-image-e2e-report.schema.json', encoding='utf-8'))"

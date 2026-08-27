@@ -1,11 +1,14 @@
 [project]
 name = "a2d-decomposer"
-version = "0.2.0"
+version = "0.3.0"
 requires-python = ">=3.11"
 dependencies = []
 
 [project.optional-dependencies]
 production = ["Pillow>=10.4"]
+
+[project.scripts]
+a2d-single-image-e2e = "a2d_decomposer.e2e_cli:main"
 
 [tool.setuptools]
 packages = ["a2d_decomposer"]

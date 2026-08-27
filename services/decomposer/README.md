@@ -1,6 +1,6 @@
 # A2D Decomposer
 
-Phase 3 converts one flat source image into the normalized semantic-layer package consumed by the Phase-2 rig compiler.
+Phase 3 converts one flat source image into the normalized semantic-layer package consumed by the Phase-2 rig compiler, then evaluates whether the generated `.a2d` is safe for automatic export.
 
 ## Pipeline
 
@@ -21,14 +21,14 @@ P2 compile_avatar()
         ↓
 P3-R6 quality scoring
         ↓
-PASS / RETRY / MANUAL_REVIEW / BLOCK
+P3-R7 E2E package/runtime gate
         ↓
-.a2d preview / auto export gate
+PASS / RETRY / MANUAL_REVIEW / BLOCK
 ```
 
 ## P3-R1 — model-independent normalization
 
-The `DecompositionBackend` protocol isolates model code from downstream A2D stages. The zero-dependency `ScriptedReferenceBackend` remains the correctness oracle.
+`DecompositionBackend` isolates model code from downstream A2D stages. The dependency-free `ScriptedReferenceBackend` remains the correctness oracle.
 
 Normalization guarantees canonical semantic aliases, active-alpha tight crops, normalized `[0,1]` geometry, deterministic assets, explicit confidence findings, parent-graph validation and source revision hashing.
 
@@ -38,35 +38,21 @@ Normalization guarantees canonical semantic aliases, active-alpha tight crops, n
 
 ## P3-R3 — semantic refinement
 
-`refine_decomposer_result()` converts production-model output toward the canonical Phase-2 semantic shape without silently hallucinating unsupported content:
-
-- body proxy only from a real cloth matte, with confidence penalty
-- one missing eye/iris/brow side can be mirrored from the detected side
-- side hair is extracted only from real front/back hair pixels
-- pair geometry/confidence inconsistencies are reported
-- core draw-order conflicts are corrected deterministically
-- canonical parent hints are emitted
-- missing required semantics remain blocking
+`refine_decomposer_result()` converts production-model output toward the canonical Phase-2 semantic shape without silently hallucinating unsupported content. It supports conservative body proxy synthesis, one-sided eye/iris/brow mirroring, real-pixel side-hair extraction, pair checks, deterministic z-order repair and required-semantic gating.
 
 ## P3-R4 — occlusion completion
 
 `CompletionProvider` is the model-independent inpainting boundary. Providers receive the source image, target layer, visible pixels and an explicit completion mask. Pixels outside that mask must remain byte-identical.
 
-Current completion targets are face holes covered by front/side hair and body holes covered by cloth. The P3-R3 body proxy is explicitly marked for full local completion.
-
 `DeterministicReferenceCompletionProvider` is a correctness oracle, not a production visual inpainting model.
 
 ## P3-R5 — landmark fusion
 
-`LandmarkProvider` is the production landmark-model boundary. P3-R5 combines direct backend landmarks, provider candidates and deterministic semantic-layer geometry.
-
-Canonical output includes head/nose/neck, eye/iris/mouth/brow centers and hair roots. High-confidence existing landmarks are preserved exactly, agreeing evidence is confidence-weighted, and disagreeing evidence selects the strongest source with an explicit confidence penalty.
+`LandmarkProvider` is the production landmark-model boundary. P3-R5 combines direct backend landmarks, provider candidates and deterministic semantic-layer geometry. High-confidence existing landmarks are preserved exactly; agreeing evidence is fused; disagreeing evidence keeps the strongest source with an explicit confidence penalty.
 
 ## P3-R6 — quality scoring
 
-`score_character_quality()` produces a stable `CharacterQualityReportV1` after P2 compilation.
-
-The score is the weighted combination of six independent dimensions:
+`score_character_quality()` emits `CharacterQualityReportV1` with six weighted dimensions:
 
 ```text
 semantic     25
@@ -79,7 +65,7 @@ compiler     15
              100
 ```
 
-The default decision policy is:
+Decision policy:
 
 ```text
 P3/P2 hard error                    → BLOCK
@@ -90,59 +76,76 @@ score >= 85 with no review action   → PASS
 score < 70                          → RETRY
 ```
 
-`PASS` is the only decision with `readyForExport=true`. `RETRY` and `MANUAL_REVIEW` do **not** discard a valid P2 `.a2d`; the artifact remains available for Studio preview, inspection and repair.
+Only `PASS` sets `readyForExport=true`. Valid P2 artifacts are kept for Studio preview when the decision is `RETRY` or `MANUAL_REVIEW`.
 
-Actions are machine-readable, for example:
+## P3-R7 — single-image E2E acceptance
 
-```text
-run_completion
-run_landmark_provider
-rerun_decomposition
-review_semantics
-review_landmarks
-review_compiler
-fix_compiler
-```
+P3-R7 separates two kinds of evidence.
 
-The JSON contract is frozen in `spec/character-quality-report.schema.json`.
+### Reference CI gate
 
-### One-click bridge
-
-```python
-result = decode_decompose_and_compile(
-    "character-id",
-    encoded_png_or_jpg,
-    see_through_backend,
-    completion_provider=my_inpainting_provider,
-    landmark_provider=my_landmark_provider,
-)
-
-if result.quality and result.quality.ready_for_export:
-    a2d_bytes = result.compiler.artifact.a2d
-elif result.compiler and result.compiler.artifact:
-    preview_bytes = result.compiler.artifact.a2d
-```
-
-The default ordering is:
+GitHub Actions runs a real cross-language package path:
 
 ```text
-decompose
-→ normalize
-→ refine
-→ complete
-→ fuse landmarks
-→ P2 compile
-→ quality score
+single RGBA source
+→ ScriptedReferenceBackend
+→ full P3/P2 pipeline
+→ Quality PASS
+→ character.a2d
+→ @a2d/runtime-api/loadA2DFromZip()
+→ e2e-report.json gate=pass
 ```
 
-Debugging can independently disable refinement, completion, landmark fusion or quality scoring with:
+The scripted backend is intentionally not production AI. This gate proves orchestration, package bytes and Runtime compatibility.
+
+### Production gate
+
+Use the CLI on a machine with See-through V3 and its weights:
+
+```bash
+a2d-single-image-e2e run \
+  --input character.png \
+  --output ./out/e2e \
+  --character-id character-001 \
+  --see-through-root /opt/see-through \
+  --completion-provider-factory mypkg.providers:make_completion \
+  --landmark-provider-factory mypkg.providers:make_landmarks
+```
+
+The command writes:
 
 ```text
-refine_semantics=False
-complete_hidden=False
-fuse_landmarks_enabled=False
-quality_scoring_enabled=False
+character.a2d
+compiler-qa.json
+quality-report.json
+e2e-preflight.json
 ```
+
+Then run the canonical Runtime smoke and finalize:
+
+```bash
+node tools/e2e/runtime_smoke.mjs \
+  ./out/e2e/character.a2d \
+  ./out/e2e/runtime-smoke.json
+
+PYTHONPATH=services/decomposer:services/rig-compiler \
+python -m a2d_decomposer.e2e_cli finalize --output ./out/e2e
+```
+
+Production `PASS` requires:
+
+```text
+backend.name == see-through
+P3 ready
+P2 QA ready
+Quality == PASS
+artifact SHA valid
+Runtime loadA2DFromZip == PASS
+```
+
+If the Runtime smoke was not executed, the gate is explicitly `NOT_RUN` rather than an implied success.
+
+The report contract is frozen in `spec/single-image-e2e-report.schema.json`.
 
 ## Tests
 
@@ -151,12 +154,6 @@ PYTHONPATH=services/decomposer:services/rig-compiler \
 python -m unittest discover -s services/decomposer/tests -v
 ```
 
-## Next
+## Phase 3 acceptance boundary
 
-P3-R7 Real Single-image E2E:
-- real See-through V3 weights + CUDA
-- production completion provider
-- production landmark provider
-- real character image corpus
-- quality gate regression thresholds
-- generated `.a2d` visual/runtime validation
+The repository now contains the full single-image orchestration and Runtime acceptance harness. A final production claim still requires executing the production command on a real character image with pinned See-through weights/CUDA and retaining the resulting `e2e-report.json` as evidence.
