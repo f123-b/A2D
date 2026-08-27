@@ -22,11 +22,14 @@ from .facial_morph import (
     CompiledMorphPlanV1, MorphCompileConfig, MorphInfluenceRecord, MorphVertexRange, PackedMorphBuffers,
     compile_morph_plan, compile_semantic_morphs, pack_morph_buffers, pack_morph_influences, pack_morph_ranges,
 )
-
 from .auto_physics import (
     AutoPhysicsChainPlanV1, AutoPhysicsPlanV1, PhysicsCompileConfig,
     PhysicsInputBindingV1, PhysicsOutputBindingV1, RuntimeSpringChainV1,
     compile_auto_physics, compile_physics_chain,
+)
+from .qa import (
+    CompileQaConfig, CompileQaFindingV1, CompileQaReportV1, QaStage, StageQaSummaryV1,
+    compile_qa_report,
 )
 
 __all__ = [
@@ -44,4 +47,6 @@ __all__ = [
     "AutoPhysicsChainPlanV1","AutoPhysicsPlanV1","PhysicsCompileConfig",
     "PhysicsInputBindingV1","PhysicsOutputBindingV1","RuntimeSpringChainV1",
     "compile_auto_physics","compile_physics_chain",
+    "CompileQaConfig","CompileQaFindingV1","CompileQaReportV1","QaStage","StageQaSummaryV1",
+    "compile_qa_report",
 ]
