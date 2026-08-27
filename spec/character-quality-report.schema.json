@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://a2d.dev/schema/character-quality-report-v1.json",
+  "title": "A2D Character Quality Report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "characterId",
+    "decision",
+    "score",
+    "readyForExport",
+    "errors",
+    "warnings",
+    "infos",
+    "dimensions",
+    "findings",
+    "actions"
+  ],
+  "properties": {
+    "version": {"const": 1},
+    "characterId": {"type": "string", "minLength": 1},
+    "decision": {
+      "type": "string",
+      "enum": ["pass", "retry", "manual_review", "block"]
+    },
+    "score": {"type": "integer", "minimum": 0, "maximum": 100},
+    "readyForExport": {"type": "boolean"},
+    "errors": {"type": "integer", "minimum": 0},
+    "warnings": {"type": "integer", "minimum": 0},
+    "infos": {"type": "integer", "minimum": 0},
+    "dimensions": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["dimension", "score", "weight"],
+        "properties": {
+          "dimension": {
+            "type": "string",
+            "enum": [
+              "semantic",
+              "completion",
+              "landmark",
+              "consistency",
+              "synthetic",
+              "compiler"
+            ]
+          },
+          "score": {"type": "integer", "minimum": 0, "maximum": 100},
+          "weight": {"type": "integer", "minimum": 0, "maximum": 100}
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "dimension", "code", "message", "penalty"],
+        "properties": {
+          "severity": {"type": "string", "enum": ["error", "warning", "info"]},
+          "dimension": {
+            "type": "string",
+            "enum": [
+              "semantic",
+              "completion",
+              "landmark",
+              "consistency",
+              "synthetic",
+              "compiler"
+            ]
+          },
+          "code": {"type": "string", "minLength": 1},
+          "message": {"type": "string", "minLength": 1},
+          "penalty": {"type": "integer", "minimum": 0, "maximum": 100},
+          "subjectId": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "code", "priority", "automatic", "message"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "rerun_decomposition",
+              "run_completion",
+              "run_landmark_provider",
+              "review_semantics",
+              "review_landmarks",
+              "review_compiler",
+              "fix_compiler"
+            ]
+          },
+          "code": {"type": "string", "minLength": 1},
+          "priority": {"type": "string", "enum": ["high", "medium", "low"]},
+          "automatic": {"type": "boolean"},
+          "message": {"type": "string", "minLength": 1},
+          "subjectId": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

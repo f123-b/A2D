@@ -24,6 +24,11 @@ from .landmark_fusion import (
     LandmarkCandidateV1, LandmarkFusionConfig, LandmarkProvider,
     ScriptedReferenceLandmarkProvider, fuse_landmarks,
 )
+from .quality import (
+    CharacterQualityReportV1, QualityActionKind, QualityActionV1,
+    QualityDecision, QualityDimension, QualityDimensionScoreV1,
+    QualityFindingV1, QualityScoringConfig, score_character_quality,
+)
 from .bridge import (
     RigCompilerBridgeInputV1, SingleImageCompileResultV1,
     decode_decompose_and_compile, decompose_and_compile, to_rig_compiler_inputs,
@@ -46,6 +51,9 @@ __all__ = [
     "complete_occlusions",
     "LandmarkCandidateV1", "LandmarkFusionConfig", "LandmarkProvider",
     "ScriptedReferenceLandmarkProvider", "fuse_landmarks",
+    "CharacterQualityReportV1", "QualityActionKind", "QualityActionV1",
+    "QualityDecision", "QualityDimension", "QualityDimensionScoreV1",
+    "QualityFindingV1", "QualityScoringConfig", "score_character_quality",
     "RigCompilerBridgeInputV1", "SingleImageCompileResultV1",
     "decode_decompose_and_compile", "decompose_and_compile", "to_rig_compiler_inputs",
 ]

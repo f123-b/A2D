@@ -57,4 +57,4 @@ jobs:
           python-version: '3.11'
       - run: python -m compileall -q services/decomposer/a2d_decomposer
       - run: PYTHONPATH=services/decomposer:services/rig-compiler python -m unittest discover -s services/decomposer/tests -v
-      - run: python -c "import json; json.load(open('spec/normalized-layer-package.schema.json', encoding='utf-8'))"
+      - run: python -c "import json; json.load(open('spec/normalized-layer-package.schema.json', encoding='utf-8')); json.load(open('spec/character-quality-report.schema.json', encoding='utf-8'))"
