@@ -1,0 +1,127 @@
+name: Production GPU E2E
+
+on:
+  push:
+    branches: [feat/production-gpu-validation]
+  pull_request:
+    paths:
+      - '.github/workflows/production-gpu-e2e.yml'
+      - 'tools/e2e/production_gpu_preflight.py'
+      - 'tools/e2e/runtime_smoke.mjs'
+      - 'services/decomposer/**'
+      - 'services/rig-compiler/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-gpu-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: GPU E2E contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m py_compile tools/e2e/production_gpu_preflight.py
+      - run: python tools/e2e/production_gpu_preflight.py --help >/dev/null
+
+  production-gpu-e2e:
+    name: Production GPU E2E
+    if: github.event_name != 'pull_request'
+    needs: contract
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 90
+    env:
+      A2D_SEE_THROUGH_ROOT: ${{ vars.A2D_SEE_THROUGH_ROOT }}
+      A2D_E2E_IMAGE: ${{ vars.A2D_E2E_IMAGE }}
+      A2D_COMPLETION_PROVIDER_FACTORY: ${{ vars.A2D_COMPLETION_PROVIDER_FACTORY }}
+      A2D_LANDMARK_PROVIDER_FACTORY: ${{ vars.A2D_LANDMARK_PROVIDER_FACTORY }}
+      A2D_GPU_PYTHON: ${{ vars.A2D_GPU_PYTHON }}
+      A2D_GROUP_OFFLOAD: ${{ vars.A2D_GROUP_OFFLOAD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Resolve production environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${A2D_SEE_THROUGH_ROOT:?Set repository variable A2D_SEE_THROUGH_ROOT}"
+          : "${A2D_COMPLETION_PROVIDER_FACTORY:?Set A2D_COMPLETION_PROVIDER_FACTORY}"
+          : "${A2D_LANDMARK_PROVIDER_FACTORY:?Set A2D_LANDMARK_PROVIDER_FACTORY}"
+          PY="${A2D_GPU_PYTHON:-python}"
+          IMAGE="${A2D_E2E_IMAGE:-${A2D_SEE_THROUGH_ROOT}/assets/test_image.png}"
+          OUT="${RUNNER_TEMP}/a2d-production-e2e"
+          echo "A2D_RESOLVED_PYTHON=${PY}" >> "$GITHUB_ENV"
+          echo "A2D_RESOLVED_IMAGE=${IMAGE}" >> "$GITHUB_ENV"
+          echo "A2D_RESOLVED_OUTPUT=${OUT}" >> "$GITHUB_ENV"
+      - name: GPU and provider preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXTRA=()
+          if [[ "${A2D_GROUP_OFFLOAD:-}" == "true" || "${A2D_GROUP_OFFLOAD:-}" == "1" ]]; then
+            EXTRA+=(--group-offload)
+          fi
+          "${A2D_RESOLVED_PYTHON}" tools/e2e/production_gpu_preflight.py \
+            --see-through-root "${A2D_SEE_THROUGH_ROOT}" \
+            --input "${A2D_RESOLVED_IMAGE}" \
+            --completion-provider-factory "${A2D_COMPLETION_PROVIDER_FACTORY}" \
+            --landmark-provider-factory "${A2D_LANDMARK_PROVIDER_FACTORY}" \
+            --json-out "${RUNNER_TEMP}/a2d-gpu-preflight.json" \
+            "${EXTRA[@]}"
+      - run: corepack enable
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm build
+      - name: Run production single-image pipeline
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXTRA=()
+          if [[ "${A2D_GROUP_OFFLOAD:-}" == "true" || "${A2D_GROUP_OFFLOAD:-}" == "1" ]]; then
+            EXTRA+=(--group-offload)
+          fi
+          PYTHONPATH="services/decomposer:services/rig-compiler${PYTHONPATH:+:${PYTHONPATH}}" \
+          "${A2D_RESOLVED_PYTHON}" -m a2d_decomposer.e2e_cli run \
+            --input "${A2D_RESOLVED_IMAGE}" \
+            --output "${A2D_RESOLVED_OUTPUT}" \
+            --character-id production-gpu-e2e \
+            --see-through-root "${A2D_SEE_THROUGH_ROOT}" \
+            --python "${A2D_RESOLVED_PYTHON}" \
+            --completion-provider-factory "${A2D_COMPLETION_PROVIDER_FACTORY}" \
+            --landmark-provider-factory "${A2D_LANDMARK_PROVIDER_FACTORY}" \
+            "${EXTRA[@]}"
+      - name: Runtime loader smoke
+        run: node tools/e2e/runtime_smoke.mjs "${A2D_RESOLVED_OUTPUT}/character.a2d" "${A2D_RESOLVED_OUTPUT}/runtime-smoke.json"
+      - name: Finalize production gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="services/decomposer:services/rig-compiler${PYTHONPATH:+:${PYTHONPATH}}" \
+          "${A2D_RESOLVED_PYTHON}" -m a2d_decomposer.e2e_cli finalize \
+            --output "${A2D_RESOLVED_OUTPUT}"
+      - name: Assert production PASS
+        run: |
+          "${A2D_RESOLVED_PYTHON}" - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = json.loads((Path(os.environ['A2D_RESOLVED_OUTPUT']) / 'e2e-report.json').read_text())
+          assert report['mode'] == 'production', report
+          assert report['gate'] == 'pass', report
+          assert report['runtime']['passed'] is True, report
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-gpu-e2e
+          path: |
+            ${{ runner.temp }}/a2d-gpu-preflight.json
+            ${{ runner.temp }}/a2d-production-e2e
+          if-no-files-found: ignore
