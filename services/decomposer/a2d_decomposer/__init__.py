@@ -25,13 +25,18 @@ from .landmark_fusion import (
     ScriptedReferenceLandmarkProvider, fuse_landmarks,
 )
 from .quality import (
-    CharacterQualityReportV1, QualityActionKind, QualityActionV1,
-    QualityDecision, QualityDimension, QualityDimensionScoreV1,
-    QualityFindingV1, QualityScoringConfig, score_character_quality,
+    CharacterQualityReportV1, QualityActionKind, QualityActionV1, QualityDecision,
+    QualityDimension, QualityDimensionScoreV1, QualityFindingV1, QualityScoringConfig,
+    score_character_quality,
 )
 from .bridge import (
     RigCompilerBridgeInputV1, SingleImageCompileResultV1,
     decode_decompose_and_compile, decompose_and_compile, to_rig_compiler_inputs,
+)
+from .e2e import (
+    E2EGate, E2EMode, RuntimeSmokeV1, SingleImageE2EPreflightV1,
+    SingleImageE2EReportV1, build_e2e_preflight, finalize_e2e_bundle,
+    provider_identity, write_e2e_preflight_bundle,
 )
 
 __all__ = [
@@ -56,4 +61,7 @@ __all__ = [
     "QualityFindingV1", "QualityScoringConfig", "score_character_quality",
     "RigCompilerBridgeInputV1", "SingleImageCompileResultV1",
     "decode_decompose_and_compile", "decompose_and_compile", "to_rig_compiler_inputs",
+    "E2EGate", "E2EMode", "RuntimeSmokeV1", "SingleImageE2EPreflightV1",
+    "SingleImageE2EReportV1", "build_e2e_preflight", "finalize_e2e_bundle",
+    "provider_identity", "write_e2e_preflight_bundle",
 ]

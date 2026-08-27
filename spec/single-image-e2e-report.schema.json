@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://a2d.dev/spec/single-image-e2e-report.schema.json",
+  "title": "A2D Single Image E2E Report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version", "characterId", "mode", "gate", "sourceSha256", "backend",
+    "qualityDecision", "qualityScore", "readyForExport", "artifactSha256",
+    "artifactByteLength", "runtime", "reasons"
+  ],
+  "properties": {
+    "version": { "const": 1 },
+    "characterId": { "type": "string", "minLength": 1 },
+    "mode": { "enum": ["reference", "production"] },
+    "gate": { "enum": ["pass", "fail", "not_run"] },
+    "sourceSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "backend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "revision"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "revision": { "type": "string", "minLength": 1 }
+      }
+    },
+    "qualityDecision": { "type": ["string", "null"], "enum": ["pass", "retry", "manual_review", "block", null] },
+    "qualityScore": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 },
+    "readyForExport": { "type": "boolean" },
+    "artifactSha256": {
+      "anyOf": [
+        { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        { "type": "null" }
+      ]
+    },
+    "artifactByteLength": { "type": "integer", "minimum": 0 },
+    "runtime": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passed", "loader", "partCount", "parameterCount", "bufferCount", "textureCount"],
+          "properties": {
+            "passed": { "type": "boolean" },
+            "loader": { "type": "string", "minLength": 1 },
+            "partCount": { "type": "integer", "minimum": 0 },
+            "parameterCount": { "type": "integer", "minimum": 0 },
+            "bufferCount": { "type": "integer", "minimum": 0 },
+            "textureCount": { "type": "integer", "minimum": 0 },
+            "error": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "reasons": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  }
+}
